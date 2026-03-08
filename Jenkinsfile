@@ -50,30 +50,30 @@ pipeline {
     }
 
     post {
-        success {
-            withCredentials([string(credentialsId: 'SLACK_WEBHOOK', variable: 'SLACK_WEBHOOK')]) {
-                sh '''
-                 curl -X POST -H 'Content-type: application/json' \
-                --data "{\"text\":\"✅ Jenkins Build #${BUILD_NUMBER} SUCCESS: Smart Parking app deployed successfully. DEV URL: http://13.58.211.204\"}" \
-                $SLACK_WEBHOOK
-                '''
-            }
-        }
-
-        failure {
-            withCredentials([string(credentialsId: 'SLACK_WEBHOOK', variable: 'SLACK_WEBHOOK')]) {
-                sh '''
+    success {
+        withCredentials([string(credentialsId: 'SLACK_WEBHOOK', variable: 'SLACK_WEBHOOK')]) {
+            sh """
                 curl -X POST -H 'Content-type: application/json' \
-                --data "{\"text\":\"✅ Jenkins Build #${BUILD_NUMBER} SUCCESS: Smart Parking app deployed successfully. DEV URL: http://13.58.211.204\"}" \
-                $SLACK_WEBHOOK
-                '''
-            }
-        }
-
-        always {
-            echo "========================================"
-            echo "Application is live at: http://13.58.211.204"
-            echo "========================================"
+                --data '{\"text\":\"✅ Jenkins Build #${env.BUILD_NUMBER} SUCCESS: Smart Parking app deployed successfully. DEV URL: http://13.58.211.204\"}' \
+                "$SLACK_WEBHOOK"
+            """
         }
     }
+
+    failure {
+        withCredentials([string(credentialsId: 'SLACK_WEBHOOK', variable: 'SLACK_WEBHOOK')]) {
+            sh """
+                curl -X POST -H 'Content-type: application/json' \
+                --data '{\"text\":\"❌ Jenkins Build #${env.BUILD_NUMBER} FAILED: Smart Parking pipeline encountered an error.\"}' \
+                "$SLACK_WEBHOOK"
+            """
+        }
+    }
+
+    always {
+        echo "========================================"
+        echo "Application is live at: http://13.58.211.204"
+        echo "========================================"
+    }
+  }
 }
