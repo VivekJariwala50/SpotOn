@@ -49,24 +49,24 @@ pipeline {
         }
     }
 
-    post {
+   post {
     success {
         withCredentials([string(credentialsId: 'SLACK_WEBHOOK', variable: 'SLACK_WEBHOOK')]) {
-            sh """
+            sh '''
                 curl -X POST -H 'Content-type: application/json' \
-                --data '{\"text\":\"🚀 Jenkins Build #${env.BUILD_NUMBER}\\nSmart Parking deployment SUCCESS\\n\\nDEV Environment\\nhttp://13.58.211.204\"}'
+                --data "{\"text\":\"🚀 Jenkins Build #$BUILD_NUMBER\nSmart Parking deployment SUCCESS\n\nDEV Environment\nhttp://13.58.211.204\"}" \
                 "$SLACK_WEBHOOK"
-            """
+            '''
         }
     }
 
     failure {
         withCredentials([string(credentialsId: 'SLACK_WEBHOOK', variable: 'SLACK_WEBHOOK')]) {
-            sh """
+            sh '''
                 curl -X POST -H 'Content-type: application/json' \
-                --data '{\"text\":\"❌ Jenkins Build #${env.BUILD_NUMBER} FAILED: Smart Parking pipeline encountered an error.\"}' \
+                --data "{\"text\":\"❌ Jenkins Build #$BUILD_NUMBER FAILED\nSmart Parking pipeline encountered an error.\"}" \
                 "$SLACK_WEBHOOK"
-            """
+            '''
         }
     }
 
@@ -75,5 +75,5 @@ pipeline {
         echo "Application is live at: http://13.58.211.204"
         echo "========================================"
     }
-  }
+}
 }
