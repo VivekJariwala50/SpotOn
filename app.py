@@ -3,10 +3,29 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import psycopg2
 import psycopg2.extras
 from datetime import datetime, timedelta
+from functools import wraps
+import os
 
 app = Flask(__name__, template_folder="pages")
-app.secret_key = "change-this-to-a-random-secret-key"
+app.secret_key = os.getenv("Zg6V!5B40&%*+:Y6", "dev-secret")
+app.permanent_session_lifetime = timedelta(minutes=30)
 
+def login_required(role=None):
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            if "user_id" not in session:
+                flash("Please log in first.", "error")
+                return redirect(url_for("login"))
+
+            if role and session.get("user_role") != role:
+                flash("Access denied.", "error")
+                return redirect(url_for("home"))
+
+            session.permanent = True
+            return f(*args, **kwargs)
+        return wrapper
+    return decorator
 
 def get_db_connection():
     conn = psycopg2.connect(
@@ -24,6 +43,7 @@ def home():
 
 
 @app.route("/signup", methods=["GET", "POST"])
+@login_required()
 def signup():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
@@ -116,6 +136,7 @@ def login():
 
 
 @app.route("/dashboard")
+@login_required(role="user")
 def dashboard():
     if "user_id" not in session:
         flash("Please log in first.", "error")
@@ -175,6 +196,7 @@ def dashboard():
         reservation_history=reservation_history
     )
 @app.route("/operator-dashboard")
+@login_required(role="user")
 def operator_dashboard():
     if "user_id" not in session:
         flash("Please log in first.", "error")
@@ -192,6 +214,7 @@ def operator_dashboard():
 
 
 @app.route("/search")
+@login_required()
 def search():
     if "user_id" not in session:
         flash("Please log in first.", "error")
@@ -352,6 +375,7 @@ def search():
         sort_by=sort_by,
     )
 @app.route("/lot/<lot_id>")
+@login_required()
 def lot_details(lot_id):
     if "user_id" not in session:
         flash("Please log in first.", "error")
@@ -452,6 +476,7 @@ def lot_details(lot_id):
         end_time=end_time_str
     )
 @app.route("/reserve/<slot_id>", methods=["POST"])
+@login_required(role="user")
 def reserve_slot(slot_id):
     if "user_id" not in session:
         flash("Please log in first.", "error")
@@ -531,6 +556,7 @@ def reserve_slot(slot_id):
 
     return redirect(url_for("lot_details", lot_id=lot_id))
 @app.route("/cancel-reservation/<reservation_id>", methods=["POST"])
+@login_required(role="user")
 def cancel_reservation(reservation_id):
     if "user_id" not in session:
         flash("Please log in first.", "error")
@@ -592,6 +618,7 @@ def logout():
 def health():
     return {"status": "ok"}
 @app.route("/profile", methods=["GET", "POST"])
+@login_required(role="user")
 def profile():
     if "user_id" not in session:
         flash("Please log in first.", "error")
@@ -651,6 +678,7 @@ def profile():
 
 
 @app.route("/vehicles", methods=["GET", "POST"])
+@login_required(role="user")
 def vehicles():
     if "user_id" not in session:
         flash("Please log in first.", "error")
@@ -715,6 +743,7 @@ def vehicles():
 
 
 @app.route("/delete-vehicle/<vehicle_id>", methods=["POST"])
+@login_required(role="user")
 def delete_vehicle(vehicle_id):
     if "user_id" not in session:
         flash("Please log in first.", "error")
@@ -862,6 +891,7 @@ def reset_password(token):
     return render_template("reset_password.html", token=token)
 
 @app.route("/toggle-favorite/<lot_id>", methods=["POST"])
+@login_required(role="user")
 def toggle_favorite(lot_id):
     if "user_id" not in session:
         flash("Please log in first.", "error")
@@ -907,6 +937,7 @@ def toggle_favorite(lot_id):
 
 
 @app.route("/favorites")
+@login_required(role="user")
 def favorites():
     if "user_id" not in session:
         flash("Please log in first.", "error")
