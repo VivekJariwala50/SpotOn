@@ -5,6 +5,8 @@ import psycopg2.extras
 from datetime import datetime, timedelta
 from functools import wraps
 import os
+import secrets
+
 
 app = Flask(__name__, template_folder="pages")
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret")
@@ -27,17 +29,15 @@ def login_required(role=None):
         return wrapper
     return decorator
 
-import os
-import psycopg2
-import psycopg2.extras
-
 def get_db_connection():
     database_url = os.getenv("DATABASE_URL")
     if not database_url:
         raise RuntimeError("DATABASE_URL environment variable is not set")
 
-    conn = psycopg2.connect(database_url)
-    return conn
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+    return psycopg2.connect(database_url)
 
 @app.route("/")
 def home():
@@ -772,7 +772,7 @@ def delete_vehicle(vehicle_id):
     flash("Vehicle deleted successfully.", "success")
     return redirect(url_for("vehicles"))
 
-import secrets
+
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
     if request.method == "POST":
