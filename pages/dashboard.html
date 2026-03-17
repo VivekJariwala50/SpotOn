@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Driver Dashboard — SpotOn Smart Parking</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css') }}"
+    />
+  </head>
+  <body class="auth-page">
+    <div class="auth-card" style="max-width: 1150px;">
+      <div class="auth-header">
+        <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
+        <h1>Welcome</h1>
+        <p>{{ user_email }}</p>
+        <p>You are logged in as {{ user_role }}.</p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="flash-message {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <div style="margin-top: 20px;">
+        <h3>Driver Dashboard</h3>
+        <p>Manage your reservations below.</p>
+      </div>
+
+      <div style="margin-top: 20px; display: flex; gap: 14px; flex-wrap: wrap;">
+        <a href="{{ url_for('search') }}" class="btn btn-primary">Search Parking</a>
+        <a href="{{ url_for('profile') }}" class="btn btn-secondary">My Profile</a>
+        <a href="{{ url_for('vehicles') }}" class="btn btn-secondary">My Vehicles</a>
+        <a href="{{ url_for('favorites') }}" class="btn btn-secondary favorite-btn">
+          <span class="favorite-heart">♥</span> Favorite Lots
+        </a>
+        <a href="{{ url_for('logout') }}" class="btn btn-primary">Logout</a>
+      </div>
+
+      <div class="dashboard-tabs">
+        <button class="dashboard-tab active" type="button" data-tab="active-tab">
+          Active Reservations
+        </button>
+        <button class="dashboard-tab" type="button" data-tab="history-tab">
+          Reservation History
+        </button>
+      </div>
+
+      <div id="active-tab" class="dashboard-tab-panel active">
+        <h2 style="margin: 8px 0 18px;">Active Reservations</h2>
+
+        {% if active_reservations %}
+          <div class="reservation-grid">
+            {% for reservation in active_reservations %}
+              <div class="reservation-card">
+                <h3>{{ reservation.lot_name }}</h3>
+                <p class="reservation-location">{{ reservation.lot_address }}</p>
+
+                <div class="reservation-meta">
+                  <div class="reservation-meta-box">
+                    <span class="reservation-label">Slot</span>
+                    <span class="reservation-value">{{ reservation.slot_label }}</span>
+                  </div>
+                  <div class="reservation-meta-box">
+                    <span class="reservation-label">Status</span>
+                    <span class="reservation-value">{{ reservation.status }}</span>
+                  </div>
+                </div>
+
+                <div class="reservation-time">
+                  <p><strong>Start:</strong> {{ reservation.start_time }}</p>
+                  <p><strong>End:</strong> {{ reservation.end_time }}</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('cancel_reservation', reservation_id=reservation.id) }}">
+                  <button type="submit" class="btn btn-secondary">Cancel Reservation</button>
+                </form>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state-card">
+            <p>You do not have any active reservations right now.</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <div id="history-tab" class="dashboard-tab-panel">
+        <h2 style="margin: 8px 0 18px;">Reservation History</h2>
+
+        {% if reservation_history %}
+          <div class="reservation-grid">
+            {% for reservation in reservation_history %}
+              <div class="reservation-card">
+                <h3>{{ reservation.lot_name }}</h3>
+                <p class="reservation-location">{{ reservation.lot_address }}</p>
+
+                <div class="reservation-meta">
+                  <div class="reservation-meta-box">
+                    <span class="reservation-label">Slot</span>
+                    <span class="reservation-value">{{ reservation.slot_label }}</span>
+                  </div>
+                  <div class="reservation-meta-box">
+                    <span class="reservation-label">Status</span>
+                    <span class="reservation-value">{{ reservation.status }}</span>
+                  </div>
+                </div>
+
+                <div class="reservation-time">
+                  <p><strong>Start:</strong> {{ reservation.start_time }}</p>
+                  <p><strong>End:</strong> {{ reservation.end_time }}</p>
+                </div>
+
+                <p class="reservation-cancelled-note">This reservation is no longer active.</p>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state-card">
+            <p>No past or cancelled reservations yet.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <script>
+      const tabs = document.querySelectorAll(".dashboard-tab");
+      const panels = document.querySelectorAll(".dashboard-tab-panel");
+
+      tabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+          const target = tab.dataset.tab;
+
+          tabs.forEach((t) => t.classList.remove("active"));
+          panels.forEach((p) => p.classList.remove("active"));
+
+          tab.classList.add("active");
+          document.getElementById(target).classList.add("active");
+        });
+      });
+    </script>
+  </body>
+</html>

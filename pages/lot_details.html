@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>{{ lot.name }} — SpotOn Smart Parking</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css') }}"
+    />
+  </head>
+  <body class="auth-page">
+    <div class="auth-card" style="max-width: 1100px;">
+      <div class="auth-header">
+        <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
+        <h1>{{ lot.name }}</h1>
+        <p>{{ lot.address }}</p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="flash-message {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <div class="search-topbar">
+        <p style="margin: 0; color: #777;">
+          Logged in as <strong>{{ user_email }}</strong> ({{ user_role }})
+        </p>
+        <div class="search-topbar-actions">
+          <a href="{{ url_for('search') }}" class="topbar-btn topbar-btn-secondary">
+            Back to Search
+          </a>
+          <a href="{{ url_for('logout') }}" class="topbar-btn topbar-btn-primary">
+            Logout
+          </a>
+        </div>
+      </div>
+
+      {% if user_role == "user" %}
+      <div style="margin: 18px 0 10px;">
+        <form method="POST" action="{{ url_for('toggle_favorite', lot_id=lot.id) }}">
+          <input type="hidden" name="next_url" value="{{ request.full_path }}">
+          <button type="submit" class="btn btn-secondary favorite-btn">
+            {% if lot.is_favorite %}
+              <span class="favorite-heart">♥</span> Remove from Favorites
+            {% else %}
+              <span class="favorite-heart">♥</span> Save to Favorites
+            {% endif %}
+          </button>
+        </form>
+      </div>
+      {% endif %}
+
+      <div class="lot-detail-summary">
+        <div class="lot-stat">
+          <span class="lot-stat-label">Address</span>
+          <span class="lot-stat-value">{{ lot.address }}</span>
+        </div>
+
+        <div class="lot-stat">
+          <span class="lot-stat-label">Available Slots</span>
+          <span class="lot-stat-value">{{ lot.available_slots }}</span>
+        </div>
+
+        <div class="lot-stat">
+          <span class="lot-stat-label">Type</span>
+          <span class="lot-stat-value">{{ lot.parking_type }}</span>
+        </div>
+
+        <div class="lot-stat">
+          <span class="lot-stat-label">Price</span>
+          <span class="lot-stat-value">${{ lot.price_per_hour }}/hr</span>
+        </div>
+      </div>
+
+      <h2 style="margin: 28px 0 18px;">Available Slots</h2>
+
+      <div class="slot-grid">
+        {% for slot in slots %}
+          <div class="slot-card">
+            <div class="slot-card-body">
+              <h3 class="slot-title">Slot {{ slot.label }}</h3>
+              <p class="slot-status">Type: {{ slot.slot_type|upper if slot.slot_type == 'ev' else slot.slot_type|capitalize }}</p>
+              <p class="slot-status">
+                Status:
+                {% if slot.is_active %}
+                  Active
+                {% else %}
+                  Inactive
+                {% endif %}
+              </p>
+            </div>
+
+            {% if user_role == "user" %}
+            {% if slot.is_active and slot.is_available_now %}
+            <form method="POST" action="{{ url_for('reserve_slot', slot_id=slot.id) }}" class="slot-reserve-form">
+              <input type="hidden" name="lot_id" value="{{ lot.id }}">
+              <label for="start_time_{{ slot.id }}" class="reserve-label">Start Time</label>
+              <input
+                      type="datetime-local"
+                      id="start_time_{{ slot.id }}"
+                      name="start_time"
+                      class="reserve-input"
+                      min="{{ now_local }}"
+                      value="{{ start_time }}"
+                      required
+              >
+              <label for="end_time_{{ slot.id }}" class="reserve-label">End Time</label>
+              <input
+                      type="datetime-local"
+                      id="end_time_{{ slot.id }}"
+                      name="end_time"
+                      class="reserve-input"
+                      min="{{ now_local }}"
+                      value="{{ end_time }}"
+                      required
+              >
+              <button type="submit" class="slot-action-btn slot-action-primary">Reserve Now</button>
+            </form>
+            {% else %}
+            <span class="slot-unavailable">Unavailable for the next hour</span>
+            {% endif %}
+            {% else %}
+            <a href="#" class="slot-action-btn slot-action-secondary">Manage Slot</a>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </body>
+</html>

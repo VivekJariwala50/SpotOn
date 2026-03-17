@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Vehicles — SpotOn Smart Parking</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css') }}"
+    />
+  </head>
+  <body class="auth-page">
+    <div class="auth-card" style="max-width: 1100px;">
+      <div class="auth-header">
+        <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
+        <h1>My Vehicles</h1>
+        <p>Add and manage your vehicles.</p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="flash-message {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <div class="search-topbar">
+        <p style="margin: 0; color: #777;">
+          Logged in as <strong>{{ user_email }}</strong> ({{ user_role }})
+        </p>
+        <div class="search-topbar-actions">
+          <a href="{{ url_for('dashboard') }}" class="topbar-btn topbar-btn-secondary">Back to Dashboard</a>
+          <a href="{{ url_for('logout') }}" class="topbar-btn topbar-btn-primary">Logout</a>
+        </div>
+      </div>
+
+      <form method="POST" class="vehicle-form">
+        <div class="vehicle-form-grid">
+          <div>
+            <label class="reserve-label" for="plate_number">Plate Number</label>
+            <input
+              type="text"
+              id="plate_number"
+              name="plate_number"
+              class="reserve-input"
+              placeholder="ABC1234"
+              required
+            >
+          </div>
+
+          <div>
+            <label class="reserve-label" for="vehicle_make">Make</label>
+            <input
+              type="text"
+              id="vehicle_make"
+              name="vehicle_make"
+              class="reserve-input"
+              placeholder="Toyota"
+            >
+          </div>
+
+          <div>
+            <label class="reserve-label" for="vehicle_model">Model</label>
+            <input
+              type="text"
+              id="vehicle_model"
+              name="vehicle_model"
+              class="reserve-input"
+              placeholder="Camry"
+            >
+          </div>
+
+          <div>
+            <label class="reserve-label" for="vehicle_color">Color</label>
+            <input
+              type="text"
+              id="vehicle_color"
+              name="vehicle_color"
+              class="reserve-input"
+              placeholder="Black"
+            >
+          </div>
+        </div>
+
+        <div style="margin-top: 20px;">
+          <button type="submit" class="btn btn-primary">Add Vehicle</button>
+        </div>
+      </form>
+
+      <h2 style="margin: 32px 0 18px;">Saved Vehicles</h2>
+
+      {% if vehicles %}
+        <div class="vehicle-grid">
+          {% for vehicle in vehicles %}
+            <div class="vehicle-card">
+              <h3>{{ vehicle.plate_number }}</h3>
+              <p><strong>Make:</strong> {{ vehicle.vehicle_make or '—' }}</p>
+              <p><strong>Model:</strong> {{ vehicle.vehicle_model or '—' }}</p>
+              <p><strong>Color:</strong> {{ vehicle.vehicle_color or '—' }}</p>
+
+              <form method="POST" action="{{ url_for('delete_vehicle', vehicle_id=vehicle.id) }}" style="margin-top: 18px;">
+                <button type="submit" class="btn btn-secondary">Delete Vehicle</button>
+              </form>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state-card">
+          <p>You have not added any vehicles yet.</p>
+        </div>
+      {% endif %}
+    </div>
+  </body>
+</html>

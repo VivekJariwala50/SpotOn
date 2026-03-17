@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>SpotOn — Premium Smart Parking</title>
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css') }}"
+    />
+  </head>
+
+  <body>
+    <header class="nav">
+      <div class="nav-inner">
+        <div class="nav-left">
+          <div class="brand">
+            <a href="/" class="text-logo">Spot<span>On</span></a>
+          </div>
+        </div>
+
+        <nav class="nav-links">
+          <a href="#spots">Find Parking</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#faq">FAQ</a>
+          <a href="#contact">Contact</a>
+        </nav>
+
+        <div class="nav-right">
+          <div class="loc-pill">
+            <span class="loc-text">Jersey City, NJ</span>
+            <button class="link-btn loc-change" id="changeCityBtn">
+              Change
+            </button>
+          </div>
+
+          <a
+            href="{{ url_for('login') }}"
+            class="btn btn-ghost"
+            style="text-decoration: none"
+            >Sign in</a
+          >
+          <a
+            href="{{ url_for('signup') }}"
+            class="btn btn-primary"
+            style="text-decoration: none"
+            >Sign up</a
+          >
+        </div>
+      </div>
+    </header>
+
+    <main class="page">
+      <section class="hero">
+        <div class="hero-inner">
+          <div class="hero-copy">
+            <span class="kicker">Smart Parking System</span>
+            <h1>Find and reserve your perfect spot instantly.</h1>
+            <p class="sub">
+              Eliminate the stress of urban parking. View real-time
+              availability, filter for EV chargers, and secure your space before
+              you arrive.
+            </p>
+
+            <div class="hero-card">
+              <div class="field">
+                <label>SEARCH DESTINATION</label>
+                <input
+                  id="searchInput"
+                  placeholder="Try: Downtown Garage, Central Square..."
+                />
+              </div>
+
+              <div class="grid-2">
+                <div class="field">
+                  <label>PICKUP LOCATION</label>
+                  <input id="pickupInput" placeholder="Use current location" />
+                </div>
+                <div class="field">
+                  <label>DROPOFF LOCATION</label>
+                  <input id="dropoffInput" placeholder="Where are you going?" />
+                </div>
+              </div>
+
+              <div class="hero-actions">
+                <button class="btn btn-primary" id="seePricesBtn" type="button">
+                  Check Availability
+                </button>
+                <a class="muted-link" href="#spots">Browse nearby spots</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-media">
+            <div class="map-shell">
+              <iframe
+                width="100%"
+                height="100%"
+                id="gmap"
+                title="Map"
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                src="https://www.google.com/maps?q=40.7433,-74.0288&z=15&output=embed"
+              ></iframe>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <section class="section">
+        <div class="section-inner">
+          <h2 class="h2">Why SpotOn?</h2>
+
+          <div class="cards-3">
+            <article class="s-card">
+              <div>
+                <div class="s-title">Advance Reservations</div>
+                <div class="s-text">
+                  Secure your parking space ahead of time to save fuel and skip
+                  the endless circling.
+                </div>
+                <button class="btn btn-ghost" type="button">Details</button>
+              </div>
+              <div class="s-emoji">🅿️</div>
+            </article>
+
+            <article class="s-card">
+              <div>
+                <div class="s-title">EV & Accessibility</div>
+                <div class="s-text">
+                  Easily filter and locate premium bays equipped with electric
+                  vehicle charging stations.
+                </div>
+                <button class="btn btn-ghost" type="button">Details</button>
+              </div>
+              <div class="s-emoji">⚡️</div>
+            </article>
+
+            <article class="s-card">
+              <div>
+                <div class="s-title">Smart Navigation</div>
+                <div class="s-text">
+                  Integrated with Google Maps to guide you directly to your
+                  reserved facility.
+                </div>
+                <button class="btn btn-ghost" type="button">Details</button>
+              </div>
+              <div class="s-emoji">🗺️</div>
+            </article>
+          </div>
+        </div>
+      </section>
+      <section class="section" id="spots">
+        <div class="section-inner">
+          <div class="split-head">
+            <h2 class="h2">Real-time availability</h2>
+
+            <div class="chips" id="chips">
+              <button class="chip chip-active" data-type="all">All</button>
+              <button class="chip" data-type="garage">Garage</button>
+              <button class="chip" data-type="street">Street</button>
+              <button class="chip" data-type="ev">EV</button>
+              <button class="chip" data-type="accessible">Accessible</button>
+            </div>
+          </div>
+
+          <div class="spots-grid">
+            <div id="spotsList" class="spots-list"></div>
+
+            <div class="map-shell map-shell--tall">
+              <iframe
+                id="gmap2"
+                title="Map"
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                src="https://www.google.com/maps?q=40.7433,-74.0288&z=15&output=embed"
+              ></iframe>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="testimonials">
+        <div class="section-inner">
+          <h2 class="h2">What our users say</h2>
+
+          <div class="t-cards-container">
+            <article class="t-card">
+              <div class="t-top">
+                <img
+                  class="t-avatar t-avatar--sm"
+                  src="https://i.pravatar.cc/120?img=47"
+                  alt="Alice avatar"
+                />
+                <div>
+                  <div class="t-name">Alice Silverson</div>
+                  <div class="t-meta">Urban Commuter</div>
+                </div>
+              </div>
+              <div class="t-stars">★★★★★</div>
+              <div class="t-headline">Saves me 20 minutes daily</div>
+              <p class="t-text">
+                SpotOn has completely removed the stress of my morning commute.
+                Knowing exactly where I'm parking before I leave is a game
+                changer.
+              </p>
+            </article>
+
+            <article class="t-card">
+              <div class="t-top">
+                <img
+                  class="t-avatar t-avatar--sm"
+                  src="https://i.pravatar.cc/120?img=12"
+                  alt="Robert avatar"
+                />
+                <div>
+                  <div class="t-name">Robert Brown</div>
+                  <div class="t-meta">Event Goer</div>
+                </div>
+              </div>
+              <div class="t-stars">★★★★★</div>
+              <div class="t-headline">Perfect for concert nights</div>
+              <p class="t-text">
+                I always stress about parking for downtown events. Booking a
+                secure garage spot in advance gave me total peace of mind.
+              </p>
+            </article>
+
+            <article class="t-card">
+              <div class="t-top">
+                <img
+                  class="t-avatar t-avatar--sm"
+                  src="https://i.pravatar.cc/120?img=32"
+                  alt="Priya avatar"
+                />
+                <div>
+                  <div class="t-name">Priya N.</div>
+                  <div class="t-meta">EV Owner</div>
+                </div>
+              </div>
+              <div class="t-stars">★★★★★</div>
+              <div class="t-headline">EV filtering is flawless</div>
+              <p class="t-text">
+                Finding a reliable EV charging spot used to be a massive
+                headache. Now I just filter, book, navigate, and plug in. Highly
+                recommended!
+              </p>
+            </article>
+
+            <article class="t-card">
+              <div class="t-top">
+                <img
+                  class="t-avatar t-avatar--sm"
+                  src="https://i.pravatar.cc/120?img=7"
+                  alt="Mateo avatar"
+                />
+                <div>
+                  <div class="t-name">Mateo R.</div>
+                  <div class="t-meta">Facility Operator</div>
+                </div>
+              </div>
+              <div class="t-stars">★★★★☆</div>
+              <div class="t-headline">Great for business</div>
+              <p class="t-text">
+                As a garage operator, the dashboard, dynamic pricing tools, and
+                real-time utilization analytics have significantly boosted our
+                efficiency.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="faq" class="faq">
+        <div class="faq-inner">
+          <h2 class="section-title">FAQ</h2>
+          <p class="section-sub">Common questions about using SpotOn.</p>
+
+          <div class="faq-shell">
+            <div class="faq-list" role="tablist" aria-label="FAQ questions">
+              <button
+                class="faq-q active"
+                role="tab"
+                aria-selected="true"
+                data-faq="rt"
+              >
+                <span class="faq-q-title"
+                  >Is availability updated in real-time?</span
+                >
+                <span class="faq-q-meta">Live spot tracking</span>
+              </button>
+
+              <button
+                class="faq-q"
+                role="tab"
+                aria-selected="false"
+                data-faq="key"
+              >
+                <span class="faq-q-title">Are payments secure?</span>
+                <span class="faq-q-meta">Encrypted transactions</span>
+              </button>
+
+              <button
+                class="faq-q"
+                role="tab"
+                aria-selected="false"
+                data-faq="reserve"
+              >
+                <span class="faq-q-title">Can I cancel my reservation?</span>
+                <span class="faq-q-meta">Refund & cancellation policy</span>
+              </button>
+
+              <button
+                class="faq-q"
+                role="tab"
+                aria-selected="false"
+                data-faq="privacy"
+              >
+                <span class="faq-q-title">How do I find my spot?</span>
+                <span class="faq-q-meta">GPS & Navigation</span>
+              </button>
+            </div>
+
+            <div class="faq-panel" role="tabpanel" aria-live="polite">
+              <div class="faq-panel-head">
+                <div class="faq-panel-kicker">Answer</div>
+                <h3 id="faqTitle" class="faq-panel-title">
+                  Is availability updated in real-time?
+                </h3>
+              </div>
+
+              <p id="faqBody" class="faq-panel-body">
+                Yes! SpotOn syncs continuously with our operator database to
+                provide live, real-time updates. The space you see available is
+                guaranteed to be yours once reserved.
+              </p>
+
+              <div class="faq-panel-actions">
+                <button class="pill" type="button" id="faqHelpful">
+                  👍 Helpful
+                </button>
+                <button class="pill" type="button" id="faqNotHelpful">
+                  👎 Not really
+                </button>
+                <span
+                  id="faqFeedback"
+                  class="faq-feedback"
+                  aria-live="polite"
+                ></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer" id="contact">
+        <div class="footer-inner">
+          <div class="footer-top">
+            <div class="footer-brand">
+              <div>
+                <a href="/" class="text-logo invert">Spot<span>On</span></a>
+                <div class="footer-desc">
+                  A comprehensive Smart Parking System connecting urban drivers
+                  with real-time availability.
+                </div>
+              </div>
+            </div>
+
+            <div class="footer-cols">
+              <div class="f-col">
+                <div class="f-h">Platform</div>
+                <a href="#">Driver App</a>
+                <a href="#">Operator Dashboard</a>
+                <a href="#">Analytics</a>
+              </div>
+
+              <div class="f-col" id="pricing">
+                <div class="f-h">Pricing</div>
+                <a href="#">Commuter Pass</a>
+                <a href="#">Pay-per-hour</a>
+                <a href="#">Enterprise</a>
+              </div>
+
+              <div class="f-col">
+                <div class="f-h">Support</div>
+                <a href="#">Help Center</a>
+                <a href="#">Contact Us</a>
+                <a href="#">System Status</a>
+              </div>
+
+              <div class="f-col">
+                <div class="f-h">Legal</div>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">Cookie Policy</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer-bottom">
+            <div class="muted">
+              © <span id="year"></span> SpotOn Smart Parking System. All rights
+              reserved.
+            </div>
+            <div class="footer-mini">
+              <a href="#">Privacy</a>
+              <a href="#">Terms</a>
+              <a href="#">Contact</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </main>
+
+    <div id="modalBackdrop" class="modal-backdrop hidden">
+      <div class="modal">
+        <div class="modal-header">
+          <div>
+            <div id="modalTitle" class="modal-title">Spot</div>
+            <div id="modalMeta" class="modal-meta">Details</div>
+          </div>
+          <button id="modalClose" class="icon-btn" aria-label="Close">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="kv">
+            <div class="k">Type</div>
+            <div id="modalType" class="v">—</div>
+          </div>
+          <div class="kv">
+            <div class="k">Price</div>
+            <div id="modalPrice" class="v">—</div>
+          </div>
+          <div class="kv">
+            <div class="k">Status</div>
+            <div id="modalStatus" class="v">—</div>
+          </div>
+
+          <div class="actions">
+            <button id="reserveBtn" class="btn btn-primary">
+              Reserve Spot
+            </button>
+            <button id="directionsBtn" class="btn btn-invert">
+              Get Directions
+            </button>
+          </div>
+
+          <p class="muted tiny">
+            SpotOn MVP: Reservations are currently simulated locally.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script defer src="{{ url_for('static', filename='js/app.js') }}"></script>
+  </body>
+</html>

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Favorite Locations — SpotOn Smart Parking</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css') }}"
+    />
+  </head>
+  <body class="auth-page">
+    <div class="auth-card" style="max-width: 1100px;">
+      <div class="auth-header">
+        <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
+        <h1>Favorite Locations</h1>
+        <p>Your saved parking lots.</p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="flash-message {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <div class="search-topbar">
+        <p style="margin: 0; color: #777;">
+          Logged in as <strong>{{ user_email }}</strong> ({{ user_role }})
+        </p>
+        <div class="search-topbar-actions">
+          <a href="{{ url_for('dashboard') }}" class="topbar-btn topbar-btn-secondary">Back to Dashboard</a>
+          <a href="{{ url_for('logout') }}" class="topbar-btn topbar-btn-primary">Logout</a>
+        </div>
+      </div>
+
+      {% if favorite_lots %}
+        <div class="lot-grid">
+          {% for lot in favorite_lots %}
+            <div class="lot-card">
+              <div class="lot-card-header">
+                <h3>{{ lot.name }}</h3>
+                <span class="lot-badge">{{ lot.parking_type }}</span>
+              </div>
+
+              <p class="lot-location">{{ lot.address }}</p>
+
+              <div class="lot-stats">
+                <div class="lot-stat">
+                  <span class="lot-stat-label">Price</span>
+                  <span class="lot-stat-value">${{ lot.price_per_hour }}/hr</span>
+                </div>
+                <div class="lot-stat">
+                  <span class="lot-stat-label">Available</span>
+                  <span class="lot-stat-value">{{ lot.available_slots }} slots</span>
+                </div>
+              </div>
+
+              <div class="lot-actions">
+                <a href="{{ url_for('lot_details', lot_id=lot.id) }}" class="btn btn-primary">View Details</a>
+
+                <form method="POST" action="{{ url_for('toggle_favorite', lot_id=lot.id) }}">
+                  <input type="hidden" name="next_url" value="{{ request.full_path }}">
+                  <button type="submit" class="btn btn-secondary favorite-btn">
+                    <span class="favorite-heart">♥</span> Remove
+                  </button>
+                </form>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state-card">
+          <p>You have not saved any favorite lots yet.</p>
+        </div>
+      {% endif %}
+    </div>
+  </body>
+</html>

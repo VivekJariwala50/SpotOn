@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Operator Dashboard — SpotOn Smart Parking</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css') }}"
+    />
+  </head>
+  <body class="auth-page">
+    <div class="auth-card">
+      <div class="auth-header">
+        <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
+        <h1>Welcome, {{ user_name }}</h1>
+        <p>You are logged in as {{ user_role }}.</p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="flash-message {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <div style="margin-top: 20px;">
+        <h3>Operator Dashboard</h3>
+        <p>Your parking lots, slots, and bookings will appear here.</p>
+      </div>
+
+      <div style="margin-top: 20px; display: flex; gap: 14px; flex-wrap: wrap;">
+        <a href="{{ url_for('search') }}" class="btn btn-primary">View Parking Lots</a>
+        <a href="{{ url_for('logout') }}" class="btn btn-primary">Logout</a>
+      </div>
+    </div>
+  </body>
+</html>

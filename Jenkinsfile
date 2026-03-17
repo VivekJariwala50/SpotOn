@@ -1,19 +1,19 @@
 pipeline {
-  agent {
-    docker { image 'python:3.11-slim' }
-  }
+  agent any
+  options { timestamps() }
 
   stages {
-    stage('Setup Python') {
-      steps {
-        sh 'python -V'
-      }
+    stage('Checkout') {
+      steps { checkout scm }
     }
 
-    stage('Install dependencies') {
+    stage('Setup Python') {
       steps {
         sh '''
-          pip install --upgrade pip
+          python3 -V
+          python3 -m venv .venv
+          . .venv/bin/activate
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
         '''
       }
@@ -21,8 +21,15 @@ pipeline {
 
     stage('Run Tests') {
       steps {
-        sh 'pytest -q'
+        sh '''
+          . .venv/bin/activate
+          pytest -q
+        '''
       }
     }
+  }
+
+  post {
+    always { cleanWs() }
   }
 }

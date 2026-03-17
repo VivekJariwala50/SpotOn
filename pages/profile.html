@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Profile — SpotOn Smart Parking</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css') }}"
+    />
+  </head>
+  <body class="auth-page">
+    <div class="auth-card" style="max-width: 900px;">
+      <div class="auth-header">
+        <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
+        <h1>My Profile</h1>
+        <p>Manage your account details.</p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="flash-message {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <div class="search-topbar">
+        <p style="margin: 0; color: #777;">
+          Logged in as <strong>{{ user_email }}</strong> ({{ user_role }})
+        </p>
+        <div class="search-topbar-actions">
+          <a href="{{ url_for('dashboard') }}" class="topbar-btn topbar-btn-secondary">Back to Dashboard</a>
+          <a href="{{ url_for('logout') }}" class="topbar-btn topbar-btn-primary">Logout</a>
+        </div>
+      </div>
+
+      <form method="POST" class="profile-form">
+        <div class="profile-form-grid">
+          <div>
+            <label class="reserve-label" for="full_name">Full Name</label>
+            <input
+              type="text"
+              id="full_name"
+              name="full_name"
+              class="reserve-input"
+              value="{{ profile.full_name if profile else '' }}"
+              placeholder="Enter your full name"
+            >
+          </div>
+
+          <div>
+            <label class="reserve-label" for="phone">Phone</label>
+            <input
+              type="text"
+              id="phone"
+              name="phone"
+              class="reserve-input"
+              value="{{ profile.phone if profile else '' }}"
+              placeholder="Enter your phone number"
+            >
+          </div>
+        </div>
+
+        <div style="margin-top: 20px;">
+          <button type="submit" class="btn btn-primary">Save Profile</button>
+        </div>
+      </form>
+    </div>
+  </body>
+</html>
