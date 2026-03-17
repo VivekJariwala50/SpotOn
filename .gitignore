@@ -15,3 +15,10 @@ node_modules/
 .idea/
 **/.idea/
 .DS_Store
+
+# Local artifacts
+dump.sql
+smart_parking.db
+.DS_Store
+.idea/
+static/.idea/
