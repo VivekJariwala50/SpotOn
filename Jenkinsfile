@@ -34,7 +34,12 @@ pipeline {
         nohup python app.py > app.log 2>&1 &
         '''
     }
-}
+    }
+    stage('Print URL') {
+    steps {
+        echo '🚀 App is running at: http://localhost:5055'
+    }
+    }
   }
 
   post {
