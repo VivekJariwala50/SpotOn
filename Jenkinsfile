@@ -32,14 +32,13 @@ pipeline {
                 docker rm app || true
                 docker rmi -f ${DOCKER_IMAGE} || true
                 docker pull --platform linux/amd64 ${DOCKER_IMAGE}
-                docker run -d -p 8000:8000 --name app \
-                -e DATABASE_URL=postgresql://admin:admin@postgres-db:5432/parking
+                docker run -d -p 8000:8000 --name app \\
+                -e DATABASE_URL=postgresql://admin:admin@postgres-db:5432/parking \\
                 ${DOCKER_IMAGE}
                 '
                 """
             }
         }
-    }
 
     post {
         success {
