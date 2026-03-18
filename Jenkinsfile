@@ -46,19 +46,20 @@ pipeline {
         
         stage('Deploy to EC2') {
             steps {
-                sh '''
+                sh """
                 ssh -o StrictHostKeyChecking=no ubuntu@3.139.64.245 << EOF
+                docker rmi danaziz/smart-parking-app || true
                 docker pull danaziz/smart-parking-app
                 
                 docker stop app || true
                 docker rm app || true
                 
-                docker run -d -p 8000:8000 \
-                --name app \
-                -e DATABASE_URL=postgresql://admin:admin@172.31.41.214:5432/parking \
+                docker run -d -p 8000:8000 \\
+                --name app \\
+                -e DATABASE_URL=postgresql://admin:admin@172.31.41.214:5432/parking \\
                 danaziz/smart-parking-app
                 EOF
-                '''
+                """
             }
         }
         stage('Setup Python') {
