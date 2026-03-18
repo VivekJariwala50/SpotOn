@@ -32,8 +32,8 @@ pipeline {
         stage('Push Image') {
             steps {
                 sh '''
-                docker tag smart-parking-app yourdockerhub/smart-parking-app
-                docker push yourdockerhub/smart-parking-app
+                docker tag smart-parking-app danaziz/smart-parking-app
+                docker push danaziz/smart-parking-app
                 '''
             }
         }
