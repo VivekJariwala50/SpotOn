@@ -66,8 +66,3 @@ pipeline {
         cleanWs()
     }
 }
-
-    always {
-        cleanWs()
-    }
-}
