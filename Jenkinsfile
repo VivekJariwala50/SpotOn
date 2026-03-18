@@ -12,9 +12,15 @@ pipeline {
         }
 
         stage('Build Docker Image') {
-            steps {
-                sh 'docker buildx build --platform linux/amd64 -t danaziz/smart-parking-app --push .'
-            }
+        steps {
+            sh '''
+            docker buildx build \
+            --platform linux/amd64 \
+            --no-cache \
+            -t danaziz/smart-parking-app \
+            --push .
+            '''
+        }
         }
         
         
