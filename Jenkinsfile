@@ -8,12 +8,6 @@ pipeline {
 
     stages {
 
-       stage('Checkout') {
-           steps {
-               git branch: 'main', url: 'https://github.com/LZRVY/smart-parking-system.git'
-           }
-       }
-
         stage('Build & Push Image') {
             steps {
                 sh '''
@@ -24,7 +18,7 @@ pipeline {
                 --platform linux/amd64 \
                 --provenance=false \
                 --no-cache \
-                -t danaziz/smart-parking-app \
+                -t $DOCKER_IMAGE \
                 --push .
                 '''
             }
@@ -32,30 +26,27 @@ pipeline {
 
         stage('Deploy to EC2') {
             steps {
-                sh '''
-                ssh -o StrictHostKeyChecking=no $EC2_HOST << EOF
-
-                echo "=== CLEANING OLD CONTAINERS ==="
+                sh """
+                ssh -o StrictHostKeyChecking=no ${EC2_HOST} '
                 docker stop app || true
                 docker rm app || true
-                
-                echo "=== REMOVING OLD IMAGE ==="
-                docker rmi -f danaziz/smart-parking-app || true
-                
-                echo "=== PULLING NEW IMAGE ==="
-                docker pull --platform linux/amd64 danaziz/smart-parking-app
-                
-                echo "=== RUNNING CONTAINER ==="
-                docker run -d -p 8000:8000 \
-                --name app \
+                docker rmi -f ${DOCKER_IMAGE} || true
+                docker pull --platform linux/amd64 ${DOCKER_IMAGE}
+                docker run -d -p 8000:8000 --name app \
                 -e DATABASE_URL=postgresql://admin:admin@172.31.41.214:5432/parking \
-                danaziz/smart-parking-app
-                
-                echo "=== DEPLOYMENT DONE ==="
-                
-                EOF
-                '''
+                ${DOCKER_IMAGE}
+                '
+                """
             }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Deployment Successful"
+        }
+        failure {
+            echo "❌ Deployment Failed"
         }
     }
 }
