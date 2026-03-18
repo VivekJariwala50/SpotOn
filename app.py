@@ -29,7 +29,8 @@ def login_required(role=None):
 
 def get_db_connection():
     conn = psycopg2.connect(
-        host="localhost",
+        host="host.docker.internal", 
+        port=5433,
         database="smart_parking",
         user="vyomraj",
         password="NewStrongPassword123"
