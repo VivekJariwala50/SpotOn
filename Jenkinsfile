@@ -49,28 +49,27 @@ pipeline {
     }
 
     post {
-        success {
-            withCredentials([string(credentialsId: 'slack-webhook', variable: 'SLACK_URL')]) {
-                sh '''
-                curl -X POST -H "Content-type: application/json" \
-                --data "{\"text\":\"✅ SUCCESS: Jenkins Build #${BUILD_NUMBER} 🚀\\n🔗 ${BUILD_URL}\\n🌐 https://smart-parking-system-1jj9.onrender.com/\"}" \
-                $SLACK_URL
-                '''
-            }
-        }
+    always {
+        cleanWs()
+    }
 
-        failure {
-            withCredentials([string(credentialsId: 'slack-webhook', variable: 'SLACK_URL')]) {
-                sh '''
-                curl -X POST -H "Content-type: application/json" \
-                --data "{\"text\":\"❌ FAILURE: Jenkins Build #${BUILD_NUMBER} 🔥\\n🔗 ${BUILD_URL}\\n🌐 https://smart-parking-system-1jj9.onrender.com/\"}" \
-                $SLACK_URL
-                '''
-            }
+    success {
+        withCredentials([string(credentialsId: 'slack-webhook', variable: 'SLACK_URL')]) {
+            sh '''
+            curl -X POST -H "Content-type: application/json" \
+            --data "{\"text\":\"✅ SUCCESS: Jenkins Build #${BUILD_NUMBER} 🚀\\n🔗 ${BUILD_URL}\\n🌐 https://smart-parking-system-1jj9.onrender.com/\"}" \
+            $SLACK_URL
+            '''
         }
+    }
 
-        always {
-            cleanWs()
+    failure {
+        withCredentials([string(credentialsId: 'slack-webhook', variable: 'SLACK_URL')]) {
+            sh '''
+            curl -X POST -H "Content-type: application/json" \
+            --data "{\"text\":\"❌ FAILURE: Jenkins Build #${BUILD_NUMBER} 🔥\\n🔗 ${BUILD_URL}\\n🌐 https://smart-parking-system-1jj9.onrender.com/\"}" \
+            $SLACK_URL
+            '''
         }
     }
 }
