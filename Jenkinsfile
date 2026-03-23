@@ -62,10 +62,11 @@ pipeline {
         stage('Verify Deployment') {
             steps {
                 sh """
-                echo "Checking if app is live..."
-                sleep 10
+                sleep 15
 
-                curl -f ${APP_URL} || exit 1
+                curl -f http://3.139.64.245:8000 || exit 1
+                echo "✅ App is LIVE at:"
+                echo "http://3.139.64.245:8000"
                 """
             }
         }
