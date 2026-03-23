@@ -28,8 +28,9 @@ pipeline {
         stage('Deploy to EC2') {
             steps {
                 sh """
-                ssh -o StrictHostKeyChecking=no ${EC2_HOST} '
-                docker network create app-network || true
+               ssh -o StrictHostKeyChecking=no ${EC2_HOST} '
+
+                docker network create parking-net || true
 
                 docker stop app || true
                 docker rm app || true
@@ -38,7 +39,7 @@ pipeline {
                 docker rm postgres-db || true
 
                 docker run -d --name postgres-db \
-                --network app-network \
+                --network parking-net \
                 -e POSTGRES_USER=admin \
                 -e POSTGRES_PASSWORD=admin \
                 -e POSTGRES_DB=parking \
@@ -49,9 +50,10 @@ pipeline {
                 docker pull --platform linux/amd64 ${DOCKER_IMAGE}
 
                 docker run -d -p 8000:8000 --name app \
-                --network app-network \
+                --network parking-net \
                 -e DATABASE_URL=postgresql://admin:admin@postgres-db:5432/parking \
                 ${DOCKER_IMAGE}
+
                 '
                 """
             }
