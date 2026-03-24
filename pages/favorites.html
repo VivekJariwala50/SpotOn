@@ -60,9 +60,7 @@
               </div>
 
               <div class="lot-actions">
-                <a href="{{ url_for('lot_details', lot_id=lot.id) }}" class="btn btn-secondary lot-view-btn">
-                  View Details
-                </a>
+                <a href="{{ url_for('lot_details', lot_id=lot.id) }}" class="btn btn-primary">View Details</a>
 
                 <form method="POST" action="{{ url_for('toggle_favorite', lot_id=lot.id) }}">
                   <input type="hidden" name="next_url" value="{{ request.full_path }}">
