@@ -83,6 +83,17 @@
               placeholder="Black"
             >
           </div>
+
+          <div>
+            <label class="reserve-label" for="vehicle_type">Vehicle Type</label>
+            <select id="vehicle_type" name="vehicle_type" class="reserve-input" required>
+              <option value="">Select vehicle type</option>
+              <option value="compact">Compact</option>
+              <option value="sedan">Sedan</option>
+              <option value="suv">SUV</option>
+              <option value="truck">Truck</option>
+            </select>
+          </div>
         </div>
 
         <div style="margin-top: 20px;">
@@ -100,6 +111,7 @@
               <p><strong>Make:</strong> {{ vehicle.vehicle_make or '—' }}</p>
               <p><strong>Model:</strong> {{ vehicle.vehicle_model or '—' }}</p>
               <p><strong>Color:</strong> {{ vehicle.vehicle_color or '—' }}</p>
+              <p><strong>Vehicle Type:</strong> {{ vehicle.vehicle_type|capitalize if vehicle.vehicle_type else '—' }}</p>
 
               <form method="POST" action="{{ url_for('delete_vehicle', vehicle_id=vehicle.id) }}" style="margin-top: 18px;">
                 <button type="submit" class="btn btn-secondary">Delete Vehicle</button>

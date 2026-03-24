@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Operator Dashboard — SpotOn Smart Parking</title>
+    <title>Admin Dashboard — SpotOn Smart Parking</title>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/styles.css') }}"
@@ -29,15 +29,14 @@
       {% endwith %}
 
       <div style="margin-top: 20px;">
-        <h3>Operator Dashboard</h3>
-        <p>Monitor parking inventory and real-time slot availability.</p>
+        <h3>Admin Dashboard</h3>
+        <p>Manage platform users, reporting, and administrative controls.</p>
       </div>
 
       <div style="margin-top: 20px; display: flex; gap: 14px; flex-wrap: wrap;">
-        <a href="{{ url_for('operator_inventory') }}" class="btn btn-primary">View Inventory</a>
-        <a href="#" class="btn btn-secondary">Update Availability</a>
-        <a href="#" class="btn btn-secondary">Manage Reservations</a>
-        <a href="#" class="btn btn-secondary">Pricing</a>
+        <a href="#" class="btn btn-primary">Manage Users</a>
+        <a href="#" class="btn btn-secondary">Reports</a>
+        <a href="#" class="btn btn-secondary">Platform Controls</a>
         <a href="{{ url_for('logout') }}" class="btn btn-primary">Logout</a>
       </div>
     </div>

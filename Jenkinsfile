@@ -2,99 +2,79 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "danaziz/smart-parking-app"
-        EC2_HOST = "ubuntu@3.139.64.245"
-        APP_URL = "http://3.139.64.245:8000"
+        APP_NAME = "smart-parking-app"
+        DEV_CONTAINER = "smart-parking-dev"
+        DEV_PORT = "80"
+        APP_PORT = "5055"
+        DEV_URL = "http://localhost"
     }
 
     stages {
 
-        stage('Build & Push Image') {
+        stage('Checkout') {
             steps {
-                sh '''
-                docker buildx create --use || true
-                docker buildx inspect --bootstrap
-
-                docker buildx build \
-                --platform linux/amd64 \
-                --provenance=false \
-                --no-cache \
-                -t $DOCKER_IMAGE \
-                --push .
-                '''
+                echo "Checking out code..."
+                checkout scm
             }
         }
 
-        stage('Deploy to EC2') {
+        stage('Build') {
             steps {
-                sh """
-               ssh -o StrictHostKeyChecking=no ${EC2_HOST} '
-
-                docker network create parking-net || true
-
-                # Start DB only if not exists (persistent)
-                docker start postgres-db || docker run -d --name postgres-db \
-                --network parking-net \
-                -e POSTGRES_USER=admin \
-                -e POSTGRES_PASSWORD=admin \
-                -e POSTGRES_DB=parking \
-                -v postgres_data:/var/lib/postgresql/data \
-                -p 5432:5432 postgres
-
-                sleep 10
-
-                # ✅ FIX (missing in your version)
-                docker stop app || true
-                docker rm app || true
-
-                docker pull --platform linux/amd64 ${DOCKER_IMAGE}
-
-                docker run -d -p 8000:8000 --name app \
-                --network parking-net \
-                -e DATABASE_URL=postgresql://admin:admin@postgres-db:5432/parking \
-                ${DOCKER_IMAGE}
-
-                '
-                """
+                echo "Building Docker image..."
+                sh 'docker build -t $APP_NAME:dev .'
             }
         }
 
-                stage('Verify Deployment') {
-                steps {
-                sh '''
-                sleep 20
-                curl -v http://3.139.64.245:8000
-                echo "http://3.139.64.245:8000"
-                '''
-               }
+        stage('Test') {
+            steps {
+                echo "Running tests..."
+                // optional: add pytest later
             }
-         }
+        }
 
-      post {
+        stage('Deploy') {
+            steps {
+                echo "Deploying container..."
+
+                sh '''
+                docker rm -f $DEV_CONTAINER || true
+
+                docker run -d \
+                  --name $DEV_CONTAINER \
+                  --network smart-network \
+                  --restart always \
+                  -p $DEV_PORT:$APP_PORT \
+                  $APP_NAME:dev
+                '''
+            }
+        }
+    }
+
+    post {
         success {
+            echo "========================================"
+            echo "Application is live at: $DEV_URL"
+            echo "========================================"
+
             withCredentials([string(credentialsId: 'SLACK_WEBHOOK', variable: 'SLACK_WEBHOOK')]) {
                 sh """
-                    curl -X POST -H 'Content-type: application/json' \
-                    --data '{"text":"✅ Jenkins Build #${BUILD_NUMBER}\\n🚗 Smart Parking deployed successfully\\n🔗 http://3.139.64.245:8000"}' \
-                    $SLACK_WEBHOOK
+                curl -X POST -H 'Content-type: application/json' \
+                --data '{\"text\":\"✅ Jenkins Build #${env.BUILD_NUMBER}\\nSmart Parking deployed successfully\\nURL: ${DEV_URL}\"}' \
+                "$SLACK_WEBHOOK"
                 """
             }
         }
 
         failure {
-            withCredentials([string(credentialsId: 'SLACK_WEBHOOK', variable: 'SLACK_WEBHOOK')]) {
-                sh """
-                    curl -X POST -H 'Content-type: application/json' \
-                    --data '{"text":"❌ Jenkins Build #${BUILD_NUMBER}\\n🚨 Deployment FAILED"}' \
-                    $SLACK_WEBHOOK
-                """
-            }
-        }
+            echo "Build failed."
 
-        always {
-            echo "========================================"
-            echo "Application is live at: http://3.139.64.245:8000"
-            echo "========================================"
+            withCredentials([string(credentialsId: 'SLACK_WEBHOOK', variable: 'SLACK_WEBHOOK')]) {
+                sh '''
+                curl -X POST -H 'Content-type: application/json' \
+                --data "{\"text\":\"❌ Jenkins Build #$BUILD_NUMBER FAILED\nSmart Parking pipeline encountered an error.\"}" \
+                "$SLACK_WEBHOOK"
+                '''
+            }
         }
     }
 }

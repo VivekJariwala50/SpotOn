@@ -120,6 +120,7 @@
               id="start_time"
               name="start_time"
               class="reserve-input"
+              min="{{ now_local }}"
               value="{{ start_time }}"
             >
           </div>
@@ -131,6 +132,7 @@
               id="end_time"
               name="end_time"
               class="reserve-input"
+              min="{{ now_local }}"
               value="{{ end_time }}"
             >
           </div>
@@ -237,94 +239,67 @@
     </div>
 
     <script>
-  let selectedDay = "today";
-  let selectedDuration = 60;
+      let selectedDay = "today";
+      let selectedDuration = 60;
 
-  function formatLocalDateTime(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  }
+      function formatLocalDateTime(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        const hours = String(date.getHours()).padStart(2, "0");
+        const minutes = String(date.getMinutes()).padStart(2, "0");
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+      }
 
-  function roundUpToNextMinute(date) {
-    const d = new Date(date);
-    d.setSeconds(0, 0);
-    d.setMinutes(d.getMinutes() + 1);
-    return d;
-  }
+      function roundUpToNextMinute(date) {
+        const d = new Date(date);
+        d.setSeconds(0, 0);
+        d.setMinutes(d.getMinutes() + 1);
+        return d;
+      }
 
-  function setInputMinimums() {
-    const startInput = document.getElementById("start_time");
-    const endInput = document.getElementById("end_time");
+      function applyQuickRange() {
+        const startInput = document.getElementById("start_time");
+        const endInput = document.getElementById("end_time");
 
-    const minValue = formatLocalDateTime(roundUpToNextMinute(new Date()));
-    startInput.min = minValue;
-    endInput.min = minValue;
-  }
+        let start;
 
-  function applyQuickRange() {
-    const startInput = document.getElementById("start_time");
-    const endInput = document.getElementById("end_time");
+        if (selectedDay === "today") {
+          start = roundUpToNextMinute(new Date());
+        } else {
+          start = new Date();
+          start.setDate(start.getDate() + 1);
+          start.setHours(9, 0, 0, 0);
+        }
 
-    let start;
+        const end = new Date(start);
+        end.setMinutes(end.getMinutes() + selectedDuration);
 
-    if (selectedDay === "today") {
-      start = roundUpToNextMinute(new Date());
-    } else {
-      start = new Date();
-      start.setDate(start.getDate() + 1);
-      start.setHours(9, 0, 0, 0);
-    }
+        startInput.value = formatLocalDateTime(start);
+        endInput.value = formatLocalDateTime(end);
+      }
 
-    const end = new Date(start);
-    end.setMinutes(end.getMinutes() + selectedDuration);
+      function setQuickDay(day, btn) {
+        selectedDay = day;
 
-    startInput.value = formatLocalDateTime(start);
-    endInput.value = formatLocalDateTime(end);
+        document.querySelectorAll("[data-day]").forEach((el) => {
+          el.classList.remove("active");
+        });
+        btn.classList.add("active");
 
-    startInput.min = formatLocalDateTime(roundUpToNextMinute(new Date()));
-    endInput.min = startInput.value;
-  }
+        applyQuickRange();
+      }
 
-  function setQuickDay(day, btn) {
-    selectedDay = day;
+      function setQuickDuration(minutes, btn) {
+        selectedDuration = minutes;
 
-    document.querySelectorAll("[data-day]").forEach((el) => {
-      el.classList.remove("active");
-    });
-    btn.classList.add("active");
+        document.querySelectorAll("[data-duration]").forEach((el) => {
+          el.classList.remove("active");
+        });
+        btn.classList.add("active");
 
-    applyQuickRange();
-  }
-
-  function setQuickDuration(minutes, btn) {
-    selectedDuration = minutes;
-
-    document.querySelectorAll("[data-duration]").forEach((el) => {
-      el.classList.remove("active");
-    });
-    btn.classList.add("active");
-
-    applyQuickRange();
-  }
-
-  document.addEventListener("DOMContentLoaded", () => {
-    const startInput = document.getElementById("start_time");
-    const endInput = document.getElementById("end_time");
-
-    setInputMinimums();
-
-    startInput.addEventListener("change", () => {
-      endInput.min = startInput.value || formatLocalDateTime(roundUpToNextMinute(new Date()));
-    });
-
-    if (startInput.value) {
-      endInput.min = startInput.value;
-    }
-  });
-</script>
+        applyQuickRange();
+      }
+    </script>
   </body>
 </html>
