@@ -72,7 +72,7 @@ pipeline {
 
       post {
         success {
-            withCredentials([string(credentialsId: 'SLACK_WEBHOOk', variable: 'SLACK_WEBHOOK')]) {
+            withCredentials([string(credentialsId: 'SLACK_WEBHOOK', variable: 'SLACK_WEBHOOK')]) {
                 sh """
                     curl -X POST -H 'Content-type: application/json' \
                     --data '{"text":"✅ Jenkins Build #${BUILD_NUMBER}\\n🚗 Smart Parking deployed successfully\\n🔗 http://3.139.64.245:8000"}' \
@@ -82,7 +82,7 @@ pipeline {
         }
 
         failure {
-            withCredentials([string(credentialsId: 'SLACK_WEBHOOk', variable: 'SLACK_WEBHOOK')]) {
+            withCredentials([string(credentialsId: 'SLACK_WEBHOOK', variable: 'SLACK_WEBHOOK')]) {
                 sh """
                     curl -X POST -H 'Content-type: application/json' \
                     --data '{"text":"❌ Jenkins Build #${BUILD_NUMBER}\\n🚨 Deployment FAILED"}' \
