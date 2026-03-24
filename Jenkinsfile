@@ -33,23 +33,33 @@ pipeline {
         }
 
         stage('Deploy') {
-            steps {
-                echo "Deploying container..."
+    steps {
+        echo 'Deploying container...'
+        sh '''
+        # Create network (safe)
+        docker network create smart-network || true
 
-                sh '''
-                docker rm -f $DEV_CONTAINER || true
+        # Start Postgres DB if not running
+        docker start postgres-db || docker run -d --name postgres-db \
+          --network smart-network \
+          -e POSTGRES_USER=admin \
+          -e POSTGRES_PASSWORD=admin \
+          -e POSTGRES_DB=parking \
+          -p 5432:5432 postgres
 
-                docker run -d \
-                  --name $DEV_CONTAINER \
-                  --network smart-network \
-                  --restart always \
-                  -p $DEV_PORT:$APP_PORT \
-                  $APP_NAME:dev
-                '''
-            }
+        # Stop old app
+        docker rm -f smart-parking-dev || true
+
+        # Run new app
+        docker run -d --name smart-parking-dev \
+          --network smart-network \
+          -p 8000:8000 \
+          -e DATABASE_URL=postgresql://admin:admin@postgres-db:5432/parking \
+          smart-parking-app:dev
+        '''
+    }
         }
     }
-
     post {
         success {
             echo "========================================"
