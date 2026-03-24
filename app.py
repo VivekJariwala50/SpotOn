@@ -10,6 +10,7 @@ app = Flask(__name__, template_folder="pages")
 app.secret_key = os.getenv("Zg6V!5B40&%*+:Y6", "dev-secret")
 app.permanent_session_lifetime = timedelta(minutes=30)
 
+
 def login_required(role=None):
     def decorator(f):
         @wraps(f)
@@ -18,14 +19,19 @@ def login_required(role=None):
                 flash("Please log in first.", "error")
                 return redirect(url_for("login"))
 
-            if role and session.get("user_role") != role:
-                flash("Access denied.", "error")
-                return redirect(url_for("home"))
+            if role is not None:
+                allowed_roles = role if isinstance(role, (list, tuple, set)) else [role]
+                if session.get("user_role") not in allowed_roles:
+                    flash("Access denied.", "error")
+                    return redirect(url_for("home"))
 
             session.permanent = True
             return f(*args, **kwargs)
+
         return wrapper
+
     return decorator
+
 
 def get_db_connection():
     conn = psycopg2.connect(
@@ -38,6 +44,7 @@ def get_db_connection():
     return conn
 
 
+
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -47,11 +54,12 @@ def home():
 @login_required()
 def signup():
     if request.method == "POST":
+        full_name = request.form.get("full_name", "").strip()
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
-        selected_role = request.form.get("role", "driver")
+        selected_role = request.form.get("role", "driver").strip().lower()
 
-        if not email or not password:
+        if not full_name or not email or not password:
             flash("Please fill in all required fields.", "error")
             return render_template("signup.html")
 
@@ -59,12 +67,7 @@ def signup():
             flash("Password must be at least 6 characters long.", "error")
             return render_template("signup.html")
 
-        # Map UI roles to DB roles
-        if selected_role == "driver":
-            db_role = "user"
-        elif selected_role == "operator":
-            db_role = "admin"
-        else:
+        if selected_role not in {"driver", "operator"}:
             flash("Invalid role selected.", "error")
             return render_template("signup.html")
 
@@ -76,10 +79,10 @@ def signup():
         try:
             cur.execute(
                 """
-                INSERT INTO users (email, password_hash, role)
-                VALUES (%s, %s, %s)
+                INSERT INTO users (full_name, email, password_hash, role)
+                VALUES (%s, %s, %s, %s)
                 """,
-                (email, password_hash, db_role)
+                (full_name, email, password_hash, selected_role)
             )
             conn.commit()
             flash("Account created successfully. Please log in.", "success")
@@ -111,7 +114,7 @@ def login():
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
         cur.execute(
-            "SELECT id, email, password_hash, role FROM users WHERE email = %s",
+            "SELECT id, email, password_hash, role, is_active FROM users WHERE email = %s",
             (email,)
         )
         user = cur.fetchone()
@@ -120,33 +123,56 @@ def login():
         conn.close()
 
         if user and check_password_hash(user["password_hash"], password):
+            if not user["is_active"]:
+                flash("Your account has been deactivated. Please contact support.", "error")
+                return render_template("login.html")
+
             session["user_id"] = str(user["id"])
             session["user_email"] = user["email"]
             session["user_role"] = user["role"]
 
             flash("Login successful.", "success")
 
-            if user["role"] == "admin":
+            if user["role"] == "driver":
+                return redirect(url_for("dashboard"))
+            elif user["role"] == "operator":
                 return redirect(url_for("operator_dashboard"))
-            return redirect(url_for("dashboard"))
+            elif user["role"] == "admin":
+                return redirect(url_for("admin_dashboard"))
+            else:
+                session.clear()
+                flash("Invalid user role.", "error")
+                return redirect(url_for("login"))
 
         flash("Invalid email or password.", "error")
         return render_template("login.html")
 
     return render_template("login.html")
 
+@app.route("/deactivate-account", methods=["POST"])
+@login_required(role="driver")
+def deactivate_account():
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    cur.execute("""
+        UPDATE users
+        SET is_active = FALSE
+        WHERE id = %s
+    """, (session.get("user_id"),))
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+    session.clear()
+    flash("Your account has been deactivated.", "success")
+    return redirect(url_for("home"))
+
 
 @app.route("/dashboard")
-@login_required(role="user")
+@login_required(role="driver")
 def dashboard():
-    if "user_id" not in session:
-        flash("Please log in first.", "error")
-        return redirect(url_for("login"))
-
-    if session.get("user_role") != "user":
-        flash("Access denied.", "error")
-        return redirect(url_for("home"))
-
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
@@ -189,6 +215,19 @@ def dashboard():
     cur.close()
     conn.close()
 
+    def format_dt(dt_value):
+        if not dt_value:
+            return "—"
+        return dt_value.strftime("%b %d, %Y • %I:%M %p").replace(" 0", " ")
+
+    for reservation in active_reservations:
+        reservation["formatted_start"] = format_dt(reservation["start_time"])
+        reservation["formatted_end"] = format_dt(reservation["end_time"])
+
+    for reservation in reservation_history:
+        reservation["formatted_start"] = format_dt(reservation["start_time"])
+        reservation["formatted_end"] = format_dt(reservation["end_time"])
+
     return render_template(
         "dashboard.html",
         user_email=session.get("user_email"),
@@ -196,17 +235,11 @@ def dashboard():
         active_reservations=active_reservations,
         reservation_history=reservation_history
     )
+
+
 @app.route("/operator-dashboard")
-@login_required(role="user")
+@login_required(role="operator")
 def operator_dashboard():
-    if "user_id" not in session:
-        flash("Please log in first.", "error")
-        return redirect(url_for("login"))
-
-    if session.get("user_role") != "admin":
-        flash("Access denied.", "error")
-        return redirect(url_for("home"))
-
     return render_template(
         "operator_dashboard.html",
         user_email=session.get("user_email"),
@@ -214,19 +247,77 @@ def operator_dashboard():
     )
 
 
-@app.route("/search")
-@login_required()
-def search():
-    if "user_id" not in session:
-        flash("Please log in first.", "error")
-        return redirect(url_for("login"))
+@app.route("/admin-dashboard")
+@login_required(role="admin")
+def admin_dashboard():
+    return render_template(
+        "admin_dashboard.html",
+        user_email=session.get("user_email"),
+        user_role=session.get("user_role")
+    )
 
+@app.route("/operator/inventory")
+@login_required(role="operator")
+def operator_inventory():
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    cur.execute("""
+        SELECT
+            pl.id,
+            pl.name,
+            pl.address,
+            COUNT(ps.id) AS total_slots,
+            COUNT(ps.id) FILTER (WHERE ps.is_active = TRUE) AS active_slots,
+            COUNT(ps.id) FILTER (WHERE ps.is_active = FALSE) AS inactive_slots,
+            COUNT(ps.id) FILTER (
+                WHERE ps.is_active = TRUE
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM reservations r
+                      WHERE r.slot_id = ps.id
+                        AND r.status = 'CONFIRMED'
+                        AND now() >= r.start_time
+                        AND now() < r.end_time
+                  )
+            ) AS available_now
+        FROM parking_lots pl
+        LEFT JOIN parking_slots ps ON pl.id = ps.lot_id
+        GROUP BY pl.id, pl.name, pl.address
+        ORDER BY pl.name
+    """)
+    lots = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return render_template(
+        "operator_inventory.html",
+        user_email=session.get("user_email"),
+        user_role=session.get("user_role"),
+        lots=lots
+    )
+
+@app.route("/search")
+@login_required(role="driver")
+def search():
     location = request.args.get("location", "").strip()
-    start_time_str = request.args.get("start_time", "").strip()
-    end_time_str = request.args.get("end_time", "").strip()
+
+    start_date = request.args.get("start_date", "").strip()
+    start_time_only = request.args.get("start_time_only", "").strip()
+    end_date = request.args.get("end_date", "").strip()
+    end_time_only = request.args.get("end_time_only", "").strip()
+
     parking_type = request.args.get("parking_type", "").strip()
     slot_type = request.args.get("slot_type", "").strip()
     sort_by = request.args.get("sort_by", "").strip()
+    vehicle_type = request.args.get("vehicle_type", "").strip().lower()
+
+    quick_day = request.args.get("quick_day", "today").strip().lower()
+    quick_duration = request.args.get("quick_duration", "60").strip()
+
+    start_time_str = f"{start_date}T{start_time_only}" if start_date and start_time_only else ""
+    end_time_str = f"{end_date}T{end_time_only}" if end_date and end_time_only else ""
 
     selected_start = None
     selected_end = None
@@ -240,10 +331,14 @@ def search():
                 flash("End time must be after start time.", "error")
                 selected_start = None
                 selected_end = None
+                start_time_str = ""
+                end_time_str = ""
         except ValueError:
             flash("Invalid date/time format.", "error")
             selected_start = None
             selected_end = None
+            start_time_str = ""
+            end_time_str = ""
 
     order_clause = "pl.created_at ASC"
     if sort_by == "price_asc":
@@ -267,6 +362,7 @@ def search():
                 COUNT(ps.id) FILTER (
                     WHERE ps.is_active = TRUE
                     AND (%s = '' OR ps.slot_type = %s)
+                    AND (%s = '' OR ps.supported_vehicle_type = %s)
                     AND NOT EXISTS (
                         SELECT 1
                         FROM reservations r
@@ -287,6 +383,19 @@ def search():
             WHERE (%s = '' OR pl.name ILIKE %s OR pl.address ILIKE %s)
               AND (%s = '' OR pl.parking_type = %s)
             GROUP BY pl.id, pl.name, pl.address, pl.price_per_hour, pl.parking_type
+            HAVING COUNT(ps.id) FILTER (
+                WHERE ps.is_active = TRUE
+                AND (%s = '' OR ps.slot_type = %s)
+                AND (%s = '' OR ps.supported_vehicle_type = %s)
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM reservations r
+                    WHERE r.slot_id = ps.id
+                      AND r.status = 'CONFIRMED'
+                      AND tstzrange(r.start_time, r.end_time, '[)') &&
+                          tstzrange(%s, %s, '[)')
+                )
+            ) > 0
             ORDER BY {order_clause}
         """
         cur.execute(
@@ -294,6 +403,8 @@ def search():
             (
                 slot_type,
                 slot_type,
+                vehicle_type,
+                vehicle_type,
                 selected_start,
                 selected_end,
                 session.get("user_id"),
@@ -302,6 +413,12 @@ def search():
                 f"%{location}%",
                 parking_type,
                 parking_type,
+                slot_type,
+                slot_type,
+                vehicle_type,
+                vehicle_type,
+                selected_start,
+                selected_end,
             ),
         )
     else:
@@ -315,6 +432,7 @@ def search():
                 COUNT(ps.id) FILTER (
                     WHERE ps.is_active = TRUE
                     AND (%s = '' OR ps.slot_type = %s)
+                    AND (%s = '' OR ps.supported_vehicle_type = %s)
                 ) AS available_slots,
                 EXISTS (
                     SELECT 1
@@ -327,6 +445,11 @@ def search():
             WHERE (%s = '' OR pl.name ILIKE %s OR pl.address ILIKE %s)
               AND (%s = '' OR pl.parking_type = %s)
             GROUP BY pl.id, pl.name, pl.address, pl.price_per_hour, pl.parking_type
+            HAVING COUNT(ps.id) FILTER (
+                WHERE ps.is_active = TRUE
+                AND (%s = '' OR ps.slot_type = %s)
+                AND (%s = '' OR ps.supported_vehicle_type = %s)
+            ) > 0
             ORDER BY {order_clause}
         """
         cur.execute(
@@ -334,12 +457,18 @@ def search():
             (
                 slot_type,
                 slot_type,
+                vehicle_type,
+                vehicle_type,
                 session.get("user_id"),
                 location,
                 f"%{location}%",
                 f"%{location}%",
                 parking_type,
                 parking_type,
+                slot_type,
+                slot_type,
+                vehicle_type,
+                vehicle_type,
             ),
         )
 
@@ -359,8 +488,12 @@ def search():
             "is_favorite": lot["is_favorite"],
         })
 
-    current_time = datetime.now()
-    now_local = current_time.replace(second=0, microsecond=0) + timedelta(minutes=1)
+    time_options = []
+    base_time = datetime.strptime("00:00", "%H:%M")
+    for i in range(48):
+        t = (base_time + timedelta(minutes=30 * i)).strftime("%H:%M")
+        label = datetime.strptime(t, "%H:%M").strftime("%I:%M %p").lstrip("0")
+        time_options.append({"value": t, "label": label})
 
     return render_template(
         "search.html",
@@ -368,30 +501,45 @@ def search():
         user_role=session.get("user_role"),
         parking_lots=parking_lots,
         location=location,
-        start_time=start_time_str,
-        end_time=end_time_str,
-        now_local=now_local.strftime("%Y-%m-%dT%H:%M"),
+        start_date=start_date,
+        start_time_only=start_time_only,
+        end_date=end_date,
+        end_time_only=end_time_only,
+        combined_start_time=start_time_str,
+        combined_end_time=end_time_str,
         parking_type=parking_type,
         slot_type=slot_type,
+        vehicle_type=vehicle_type,
         sort_by=sort_by,
+        quick_day=quick_day,
+        quick_duration=quick_duration,
+        time_options=time_options,
     )
-@app.route("/lot/<lot_id>")
-@login_required()
-def lot_details(lot_id):
-    if "user_id" not in session:
-        flash("Please log in first.", "error")
-        return redirect(url_for("login"))
 
+
+@app.route("/lot/<lot_id>")
+@login_required(role="driver")
+def lot_details(lot_id):
     start_time_str = request.args.get("start_time", "").strip()
     end_time_str = request.args.get("end_time", "").strip()
 
     selected_start = None
     selected_end = None
 
+    start_date = ""
+    start_time_only = ""
+    end_date = ""
+    end_time_only = ""
+
     if start_time_str and end_time_str:
         try:
             selected_start = datetime.fromisoformat(start_time_str)
             selected_end = datetime.fromisoformat(end_time_str)
+
+            start_date = selected_start.strftime("%Y-%m-%d")
+            start_time_only = selected_start.strftime("%H:%M")
+            end_date = selected_end.strftime("%Y-%m-%d")
+            end_time_only = selected_end.strftime("%H:%M")
         except ValueError:
             flash("Invalid search time range.", "error")
             return redirect(url_for("search"))
@@ -399,6 +547,7 @@ def lot_details(lot_id):
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
+    # Fetch lot details
     cur.execute("""
         SELECT
             pl.id,
@@ -426,6 +575,7 @@ def lot_details(lot_id):
         flash("Parking lot not found.", "error")
         return redirect(url_for("search"))
 
+    # Fetch slot details
     if selected_start and selected_end:
         cur.execute("""
             SELECT
@@ -433,6 +583,7 @@ def lot_details(lot_id):
                 ps.label,
                 ps.slot_type,
                 ps.is_active,
+                ps.supported_vehicle_type,
                 NOT EXISTS (
                     SELECT 1
                     FROM reservations r
@@ -440,11 +591,27 @@ def lot_details(lot_id):
                       AND r.status = 'CONFIRMED'
                       AND tstzrange(r.start_time, r.end_time, '[)') &&
                           tstzrange(%s, %s, '[)')
-                ) AS is_available_now
+                ) AS is_available_now,
+                EXISTS (
+                    SELECT 1
+                    FROM reservations r
+                    WHERE r.slot_id = ps.id
+                      AND r.user_id = %s
+                      AND r.status = 'CONFIRMED'
+                      AND tstzrange(r.start_time, r.end_time, '[)') &&
+                          tstzrange(%s, %s, '[)')
+                ) AS reserved_by_current_user
             FROM parking_slots ps
             WHERE ps.lot_id = %s
             ORDER BY ps.label
-        """, (selected_start, selected_end, lot_id))
+        """, (
+            selected_start,
+            selected_end,
+            session.get("user_id"),
+            selected_start,
+            selected_end,
+            lot_id
+        ))
     else:
         cur.execute("""
             SELECT
@@ -452,7 +619,9 @@ def lot_details(lot_id):
                 ps.label,
                 ps.slot_type,
                 ps.is_active,
-                TRUE AS is_available_now
+                ps.supported_vehicle_type,
+                TRUE AS is_available_now,
+                FALSE AS reserved_by_current_user
             FROM parking_slots ps
             WHERE ps.lot_id = %s
             ORDER BY ps.label
@@ -460,11 +629,24 @@ def lot_details(lot_id):
 
     slots = cur.fetchall()
 
+    # Fetch driver vehicles
+    cur.execute("""
+        SELECT id, plate_number, vehicle_make, vehicle_model, vehicle_color, vehicle_type
+        FROM vehicles
+        WHERE user_id = %s
+        ORDER BY created_at DESC
+    """, (session.get("user_id"),))
+    vehicles = cur.fetchall()
+
     cur.close()
     conn.close()
 
-    current_time = datetime.now()
-    now_local = current_time.replace(second=0, microsecond=0) + timedelta(minutes=1)
+    time_options = []
+    base_time = datetime.strptime("00:00", "%H:%M")
+    for i in range(48):
+        t = (base_time + timedelta(minutes=30 * i)).strftime("%H:%M")
+        label = datetime.strptime(t, "%H:%M").strftime("%I:%M %p").lstrip("0")
+        time_options.append({"value": t, "label": label})
 
     return render_template(
         "lot_details.html",
@@ -472,45 +654,60 @@ def lot_details(lot_id):
         user_role=session.get("user_role"),
         lot=lot,
         slots=slots,
-        now_local=now_local.strftime("%Y-%m-%dT%H:%M"),
-        start_time=start_time_str,
-        end_time=end_time_str
+        vehicles=vehicles,
+        start_date=start_date,
+        start_time_only=start_time_only,
+        end_date=end_date,
+        end_time_only=end_time_only,
+        time_options=time_options
     )
+
+
 @app.route("/reserve/<slot_id>", methods=["POST"])
-@login_required(role="user")
+@login_required(role="driver")
 def reserve_slot(slot_id):
-    if "user_id" not in session:
-        flash("Please log in first.", "error")
-        return redirect(url_for("login"))
+    submitted_lot_id = request.form.get("lot_id")
+    vehicle_id = request.form.get("vehicle_id", "").strip()
 
-    if session.get("user_role") != "user":
-        flash("Only users can create reservations.", "error")
-        return redirect(url_for("search"))
+    start_date = request.form.get("start_date", "").strip()
+    start_time_only = request.form.get("start_time_only", "").strip()
+    end_date = request.form.get("end_date", "").strip()
+    end_time_only = request.form.get("end_time_only", "").strip()
 
-    lot_id = request.form.get("lot_id")
-    start_time_str = request.form.get("start_time", "").strip()
-    end_time_str = request.form.get("end_time", "").strip()
+    start_time_str = f"{start_date}T{start_time_only}" if start_date and start_time_only else ""
+    end_time_str = f"{end_date}T{end_time_only}" if end_date and end_time_only else ""
 
-    if not lot_id or not start_time_str or not end_time_str:
-        flash("Please provide reservation start and end times.", "error")
-        return redirect(url_for("lot_details", lot_id=lot_id or ""))
+    def back_to_lot(lot_id_value):
+        return redirect(
+            url_for(
+                "lot_details",
+                lot_id=lot_id_value or submitted_lot_id or "",
+                start_time=start_time_str,
+                end_time=end_time_str
+            )
+        )
+
+    if not vehicle_id or not start_time_str or not end_time_str:
+        flash("Please select a vehicle and provide reservation start and end times.", "error")
+        return back_to_lot(submitted_lot_id)
 
     try:
         start_time = datetime.fromisoformat(start_time_str)
         end_time = datetime.fromisoformat(end_time_str)
     except ValueError:
         flash("Invalid date/time format.", "error")
-        return redirect(url_for("lot_details", lot_id=lot_id))
+        return back_to_lot(submitted_lot_id)
 
     if end_time <= start_time:
         flash("End time must be after start time.", "error")
-        return redirect(url_for("lot_details", lot_id=lot_id))
-    current_minutes =  datetime.now().replace(second=0, microsecond=0)
+        return back_to_lot(submitted_lot_id)
+
+    current_minutes = datetime.now().replace(second=0, microsecond=0)
     minimum_start_time = current_minutes + timedelta(minutes=1)
 
     if start_time < minimum_start_time:
         flash("Start time cannot be earlier than the current time.", "error")
-        return redirect(url_for("lot_details", lot_id=lot_id))
+        return back_to_lot(submitted_lot_id)
 
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -518,12 +715,17 @@ def reserve_slot(slot_id):
     try:
         cur.execute(
             """
-            SELECT pl.price_per_hour, ps.is_active
+            SELECT
+                ps.id,
+                ps.lot_id,
+                ps.is_active,
+                ps.supported_vehicle_type,
+                pl.price_per_hour
             FROM parking_slots ps
             JOIN parking_lots pl ON pl.id = ps.lot_id
-            WHERE ps.id = %s AND ps.lot_id = %s
+            WHERE ps.id = %s
             """,
-            (slot_id, lot_id)
+            (slot_id,)
         )
         slot_record = cur.fetchone()
 
@@ -531,9 +733,34 @@ def reserve_slot(slot_id):
             flash("Slot not found.", "error")
             return redirect(url_for("search"))
 
+        actual_lot_id = str(slot_record["lot_id"])
+
         if not slot_record["is_active"]:
             flash("This slot is currently inactive.", "error")
-            return redirect(url_for("lot_details", lot_id=lot_id))
+            return back_to_lot(actual_lot_id)
+
+        cur.execute(
+            """
+            SELECT id, plate_number, vehicle_type
+            FROM vehicles
+            WHERE id = %s
+              AND user_id = %s
+            """,
+            (vehicle_id, session.get("user_id"))
+        )
+        selected_vehicle = cur.fetchone()
+
+        if not selected_vehicle:
+            flash("Selected vehicle not found.", "error")
+            return back_to_lot(actual_lot_id)
+
+        if selected_vehicle["vehicle_type"] != slot_record["supported_vehicle_type"]:
+            flash(
+                f"Vehicle type mismatch. Slot supports {slot_record['supported_vehicle_type']}, "
+                f"but selected vehicle is {selected_vehicle['vehicle_type']}.",
+                "error"
+            )
+            return back_to_lot(actual_lot_id)
 
         duration_hours = (end_time - start_time).total_seconds() / 3600
         total_cost = round(float(slot_record["price_per_hour"] or 0) * duration_hours, 2)
@@ -546,27 +773,26 @@ def reserve_slot(slot_id):
             (session.get("user_id"), slot_id, start_time, end_time)
         )
         conn.commit()
-        flash(f"Reservation confirmed. Estimated cost: ${total_cost:.2f}", "success")
+
+        flash(
+            f"Reservation confirmed for vehicle {selected_vehicle['plate_number']}. "
+            f"Estimated cost: ${total_cost:.2f}",
+            "success"
+        )
+        return back_to_lot(actual_lot_id)
 
     except psycopg2.Error:
         conn.rollback()
         flash("That slot is already reserved for the selected time range.", "error")
+        return back_to_lot(submitted_lot_id)
+
     finally:
         cur.close()
         conn.close()
 
-    return redirect(url_for("lot_details", lot_id=lot_id))
 @app.route("/cancel-reservation/<reservation_id>", methods=["POST"])
-@login_required(role="user")
+@login_required(role="driver")
 def cancel_reservation(reservation_id):
-    if "user_id" not in session:
-        flash("Please log in first.", "error")
-        return redirect(url_for("login"))
-
-    if session.get("user_role") != "user":
-        flash("Only users can cancel reservations.", "error")
-        return redirect(url_for("home"))
-
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
@@ -608,6 +834,7 @@ def cancel_reservation(reservation_id):
     flash("Reservation cancelled successfully.", "success")
     return redirect(url_for("dashboard"))
 
+
 @app.route("/logout")
 def logout():
     session.clear()
@@ -618,17 +845,11 @@ def logout():
 @app.route("/health")
 def health():
     return {"status": "ok"}
+
+
 @app.route("/profile", methods=["GET", "POST"])
-@login_required(role="user")
+@login_required(role="driver")
 def profile():
-    if "user_id" not in session:
-        flash("Please log in first.", "error")
-        return redirect(url_for("login"))
-
-    if session.get("user_role") != "user":
-        flash("Access denied.", "error")
-        return redirect(url_for("home"))
-
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
@@ -679,16 +900,8 @@ def profile():
 
 
 @app.route("/vehicles", methods=["GET", "POST"])
-@login_required(role="user")
+@login_required(role="driver")
 def vehicles():
-    if "user_id" not in session:
-        flash("Please log in first.", "error")
-        return redirect(url_for("login"))
-
-    if session.get("user_role") != "user":
-        flash("Access denied.", "error")
-        return redirect(url_for("home"))
-
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
@@ -697,9 +910,12 @@ def vehicles():
         vehicle_make = request.form.get("vehicle_make", "").strip()
         vehicle_model = request.form.get("vehicle_model", "").strip()
         vehicle_color = request.form.get("vehicle_color", "").strip()
+        vehicle_type = request.form.get("vehicle_type", "").strip().lower()
 
         if not plate_number:
             flash("Plate number is required.", "error")
+        elif vehicle_type not in {"compact", "sedan", "suv", "truck"}:
+            flash("Please select a valid vehicle type.", "error")
         else:
             try:
                 cur.execute("""
@@ -708,15 +924,17 @@ def vehicles():
                         plate_number,
                         vehicle_make,
                         vehicle_model,
-                        vehicle_color
+                        vehicle_color,
+                        vehicle_type
                     )
-                    VALUES (%s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s)
                 """, (
                     session.get("user_id"),
                     plate_number,
                     vehicle_make,
                     vehicle_model,
-                    vehicle_color
+                    vehicle_color,
+                    vehicle_type
                 ))
                 conn.commit()
                 flash("Vehicle added successfully.", "success")
@@ -725,7 +943,7 @@ def vehicles():
                 flash("Could not add vehicle. Plate may already exist.", "error")
 
     cur.execute("""
-        SELECT id, plate_number, vehicle_make, vehicle_model, vehicle_color
+        SELECT id, plate_number, vehicle_make, vehicle_model, vehicle_color, vehicle_type
         FROM vehicles
         WHERE user_id = %s
         ORDER BY created_at DESC
@@ -744,16 +962,8 @@ def vehicles():
 
 
 @app.route("/delete-vehicle/<vehicle_id>", methods=["POST"])
-@login_required(role="user")
+@login_required(role="driver")
 def delete_vehicle(vehicle_id):
-    if "user_id" not in session:
-        flash("Please log in first.", "error")
-        return redirect(url_for("login"))
-
-    if session.get("user_role") != "user":
-        flash("Access denied.", "error")
-        return redirect(url_for("home"))
-
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
@@ -832,9 +1042,7 @@ def reset_password(token):
         flash("Invalid reset link.", "error")
         return redirect(url_for("forgot_password"))
 
-    cur.execute("""
-        SELECT now() AS current_time
-    """)
+    cur.execute("SELECT now() AS current_time")
     current_time_row = cur.fetchone()
     current_time = current_time_row["current_time"]
 
@@ -891,17 +1099,10 @@ def reset_password(token):
     conn.close()
     return render_template("reset_password.html", token=token)
 
+
 @app.route("/toggle-favorite/<lot_id>", methods=["POST"])
-@login_required(role="user")
+@login_required(role="driver")
 def toggle_favorite(lot_id):
-    if "user_id" not in session:
-        flash("Please log in first.", "error")
-        return redirect(url_for("login"))
-
-    if session.get("user_role") != "user":
-        flash("Only users can save favorite locations.", "error")
-        return redirect(url_for("home"))
-
     next_url = request.form.get("next_url") or url_for("search")
 
     conn = get_db_connection()
@@ -938,16 +1139,8 @@ def toggle_favorite(lot_id):
 
 
 @app.route("/favorites")
-@login_required(role="user")
+@login_required(role="driver")
 def favorites():
-    if "user_id" not in session:
-        flash("Please log in first.", "error")
-        return redirect(url_for("login"))
-
-    if session.get("user_role") != "user":
-        flash("Access denied.", "error")
-        return redirect(url_for("home"))
-
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
@@ -978,6 +1171,7 @@ def favorites():
         user_role=session.get("user_role"),
         favorite_lots=favorite_lots
     )
+
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5055)

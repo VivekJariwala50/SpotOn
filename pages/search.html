@@ -10,7 +10,7 @@
     />
   </head>
   <body class="auth-page">
-    <div class="auth-card" style="max-width: 1100px;">
+    <div class="auth-card" style="max-width: 1180px;">
       <div class="auth-header">
         <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
         <h1>Find Parking</h1>
@@ -32,15 +32,9 @@
           Logged in as <strong>{{ user_email }}</strong> ({{ user_role }})
         </p>
         <div class="search-topbar-actions">
-          {% if user_role == "admin" %}
-            <a href="{{ url_for('operator_dashboard') }}" class="topbar-btn topbar-btn-secondary">
-              Back to Dashboard
-            </a>
-          {% else %}
-            <a href="{{ url_for('dashboard') }}" class="topbar-btn topbar-btn-secondary">
-              Back to Dashboard
-            </a>
-          {% endif %}
+          <a href="{{ url_for('dashboard') }}" class="topbar-btn topbar-btn-secondary">
+            Back to Dashboard
+          </a>
           <a href="{{ url_for('logout') }}" class="topbar-btn topbar-btn-primary">Logout</a>
         </div>
       </div>
@@ -51,17 +45,15 @@
           <div class="quick-time-actions">
             <button
               type="button"
-              class="quick-time-btn active"
+              class="quick-time-btn {% if quick_day == 'today' %}active{% endif %}"
               data-day="today"
-              onclick="setQuickDay('today', this)"
             >
               Today
             </button>
             <button
               type="button"
-              class="quick-time-btn"
+              class="quick-time-btn {% if quick_day == 'tomorrow' %}active{% endif %}"
               data-day="tomorrow"
-              onclick="setQuickDay('tomorrow', this)"
             >
               Tomorrow
             </button>
@@ -73,25 +65,22 @@
           <div class="quick-time-actions">
             <button
               type="button"
-              class="quick-time-btn"
+              class="quick-time-btn {% if quick_duration == '30' %}active{% endif %}"
               data-duration="30"
-              onclick="setQuickDuration(30, this)"
             >
               30 min
             </button>
             <button
               type="button"
-              class="quick-time-btn active"
+              class="quick-time-btn {% if quick_duration == '60' %}active{% endif %}"
               data-duration="60"
-              onclick="setQuickDuration(60, this)"
             >
               1 hour
             </button>
             <button
               type="button"
-              class="quick-time-btn"
+              class="quick-time-btn {% if quick_duration == '120' %}active{% endif %}"
               data-duration="120"
-              onclick="setQuickDuration(120, this)"
             >
               2 hours
             </button>
@@ -100,8 +89,11 @@
       </div>
 
       <form method="GET" action="{{ url_for('search') }}" class="search-form">
+        <input type="hidden" name="quick_day" id="quick_day" value="{{ quick_day or 'today' }}">
+        <input type="hidden" name="quick_duration" id="quick_duration" value="{{ quick_duration or '60' }}">
+
         <div class="search-form-grid">
-          <div>
+          <div class="search-field-wide">
             <label class="reserve-label" for="location">Location</label>
             <input
               type="text"
@@ -114,27 +106,72 @@
           </div>
 
           <div>
-            <label class="reserve-label" for="start_time">Start Time</label>
+            <label class="reserve-label" for="start_date">Start Date</label>
             <input
-              type="datetime-local"
-              id="start_time"
-              name="start_time"
+              type="date"
+              id="start_date"
+              name="start_date"
               class="reserve-input"
+<<<<<<< HEAD
               min="{{ now_local }}"
               value="{{ start_time }}"
+=======
+              value="{{ start_date }}"
+>>>>>>> d05e6d3 (Sprint 2: roles, deactivation, vehicle type, availability, UI polish)
             >
           </div>
 
           <div>
-            <label class="reserve-label" for="end_time">End Time</label>
+            <label class="reserve-label" for="start_time_only">Start Time</label>
+            <select id="start_time_only" name="start_time_only" class="reserve-input">
+              <option value="">Select time</option>
+              {% for opt in time_options %}
+                <option value="{{ opt.value }}" {% if start_time_only == opt.value %}selected{% endif %}>
+                  {{ opt.label }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div>
+            <label class="reserve-label" for="end_date">End Date</label>
             <input
-              type="datetime-local"
-              id="end_time"
-              name="end_time"
+              type="date"
+              id="end_date"
+              name="end_date"
               class="reserve-input"
+<<<<<<< HEAD
               min="{{ now_local }}"
               value="{{ end_time }}"
+=======
+              value="{{ end_date }}"
+>>>>>>> d05e6d3 (Sprint 2: roles, deactivation, vehicle type, availability, UI polish)
             >
+          </div>
+
+          <div>
+            <label class="reserve-label" for="end_time_only">End Time</label>
+            <select id="end_time_only" name="end_time_only" class="reserve-input">
+              <option value="">Select time</option>
+              {% for opt in time_options %}
+                <option value="{{ opt.value }}" {% if end_time_only == opt.value %}selected{% endif %}>
+                  {{ opt.label }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="search-form-grid-second">
+          <div>
+            <label class="reserve-label" for="vehicle_type">Vehicle Type</label>
+            <select id="vehicle_type" name="vehicle_type" class="reserve-input">
+              <option value="" {% if not vehicle_type %}selected{% endif %}>All</option>
+              <option value="compact" {% if vehicle_type == "compact" %}selected{% endif %}>Compact</option>
+              <option value="sedan" {% if vehicle_type == "sedan" %}selected{% endif %}>Sedan</option>
+              <option value="suv" {% if vehicle_type == "suv" %}selected{% endif %}>SUV</option>
+              <option value="truck" {% if vehicle_type == "truck" %}selected{% endif %}>Truck</option>
+            </select>
           </div>
 
           <div>
@@ -191,54 +228,58 @@
         </div>
       </form>
 
+      {% if parking_lots %}
       <div class="lot-grid">
         {% for lot in parking_lots %}
-          <div class="lot-card">
-            <div class="lot-card-header">
-              <h3>{{ lot.name }}</h3>
-              <span class="lot-badge">{{ lot.type }}</span>
+        <div class="lot-card">
+          <div class="lot-card-header">
+            <h3>{{ lot.name }}</h3>
+            <span class="lot-badge">{{ lot.type }}</span>
+          </div>
+          <p class="lot-location">{{ lot.location }}</p>
+          <div class="lot-stats">
+            <div class="lot-stat">
+              <span class="lot-stat-label">Price</span>
+              <span class="lot-stat-value">${{ lot.price_per_hour }}/hr</span>
             </div>
-
-            <p class="lot-location">{{ lot.location }}</p>
-
-            <div class="lot-stats">
-              <div class="lot-stat">
-                <span class="lot-stat-label">Price</span>
-                <span class="lot-stat-value">${{ lot.price_per_hour }}/hr</span>
-              </div>
-              <div class="lot-stat">
-                <span class="lot-stat-label">Available</span>
-                <span class="lot-stat-value">{{ lot.available_slots }} slots</span>
-              </div>
-            </div>
-
-            <div class="lot-actions">
-              <a
-                href="{{ url_for('lot_details', lot_id=lot.id, start_time=start_time, end_time=end_time) }}"
-                class="btn btn-primary"
-              >
-                View Details
-              </a>
-
-              {% if user_role == "user" %}
-                <form method="POST" action="{{ url_for('toggle_favorite', lot_id=lot.id) }}">
-                  <input type="hidden" name="next_url" value="{{ request.full_path }}">
-                  <button type="submit" class="btn btn-secondary favorite-btn">
-                    {% if lot.is_favorite %}
-                      <span class="favorite-heart">♥</span> Saved
-                    {% else %}
-                      <span class="favorite-heart">♥</span> Save Lot
-                    {% endif %}
-                  </button>
-                </form>
-              {% endif %}
+            <div class="lot-stat">
+              <span class="lot-stat-label">Available</span>
+              <span class="lot-stat-value">{{ lot.available_slots }} slots</span>
             </div>
           </div>
+
+          <div class="lot-actions">
+            <a href="{{ url_for('lot_details', lot_id=lot.id, start_time=combined_start_time, end_time=combined_end_time) }}"
+               class="btn btn-secondary lot-view-btn">
+              View Details
+            </a>
+            {% if user_role == "driver" %}
+            <form method="POST" action="{{ url_for('toggle_favorite', lot_id=lot.id) }}">
+              <input type="hidden" name="next_url" value="{{ request.full_path }}">
+              <button type="submit" class="btn btn-secondary favorite-btn">
+                {% if lot.is_favorite %}
+                  <span class="favorite-heart">♥</span> Saved
+                {% else %}
+                  <span class="favorite-heart">♥</span> Save Lot
+                {% endif %}
+              </button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
         {% endfor %}
       </div>
-    </div>
+      {% else %}
+      <div class="empty-state-card">
+        <p>No parking lots match your current filters.</p>
+        <p style="margin-top: 8px; color: #666;">
+          Try changing the vehicle type, slot type, time range, or parking type.
+        </p>
+      </div>
+      {% endif %}
 
     <script>
+<<<<<<< HEAD
       let selectedDay = "today";
       let selectedDuration = 60;
 
@@ -300,6 +341,91 @@
 
         applyQuickRange();
       }
+=======
+      function pad(n) {
+        return String(n).padStart(2, "0");
+      }
+
+      function roundUpToNextHalfHour(date) {
+        const d = new Date(date);
+        d.setSeconds(0, 0);
+        const mins = d.getMinutes();
+        if (mins === 0 || mins === 30) {
+          d.setMinutes(mins + 30);
+        } else if (mins < 30) {
+          d.setMinutes(30);
+        } else {
+          d.setHours(d.getHours() + 1);
+          d.setMinutes(0);
+        }
+        return d;
+      }
+
+      function formatDateValue(date) {
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+      }
+
+      function formatTimeValue(date) {
+        return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+      }
+
+      function applyQuickRange() {
+        const dayValue = document.getElementById("quick_day").value;
+        const durationValue = parseInt(document.getElementById("quick_duration").value, 10);
+
+        const startDateInput = document.getElementById("start_date");
+        const startTimeInput = document.getElementById("start_time_only");
+        const endDateInput = document.getElementById("end_date");
+        const endTimeInput = document.getElementById("end_time_only");
+
+        let start;
+
+        if (dayValue === "today") {
+          start = roundUpToNextHalfHour(new Date());
+        } else {
+          start = new Date();
+          start.setDate(start.getDate() + 1);
+          start.setHours(9, 0, 0, 0);
+        }
+
+        const end = new Date(start);
+        end.setMinutes(end.getMinutes() + durationValue);
+
+        startDateInput.value = formatDateValue(start);
+        startTimeInput.value = formatTimeValue(start);
+        endDateInput.value = formatDateValue(end);
+        endTimeInput.value = formatTimeValue(end);
+      }
+
+      document.querySelectorAll("[data-day]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll("[data-day]").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          document.getElementById("quick_day").value = btn.dataset.day;
+          applyQuickRange();
+        });
+      });
+
+      document.querySelectorAll("[data-duration]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll("[data-duration]").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          document.getElementById("quick_duration").value = btn.dataset.duration;
+          applyQuickRange();
+        });
+      });
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const startDateInput = document.getElementById("start_date");
+        const startTimeInput = document.getElementById("start_time_only");
+        const endDateInput = document.getElementById("end_date");
+        const endTimeInput = document.getElementById("end_time_only");
+
+        if (!startDateInput.value && !startTimeInput.value && !endDateInput.value && !endTimeInput.value) {
+          applyQuickRange();
+        }
+      });
+>>>>>>> d05e6d3 (Sprint 2: roles, deactivation, vehicle type, availability, UI polish)
     </script>
   </body>
 </html>

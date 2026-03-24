@@ -41,7 +41,7 @@
         </div>
       </div>
 
-      {% if user_role == "user" %}
+      {% if user_role == "driver" %}
       <div style="margin: 18px 0 10px;">
         <form method="POST" action="{{ url_for('toggle_favorite', lot_id=lot.id) }}">
           <input type="hidden" name="next_url" value="{{ request.full_path }}">
@@ -86,6 +86,7 @@
             <div class="slot-card-body">
               <h3 class="slot-title">Slot {{ slot.label }}</h3>
               <p class="slot-status">Type: {{ slot.slot_type|upper if slot.slot_type == 'ev' else slot.slot_type|capitalize }}</p>
+              <p class="slot-status">Supported Vehicle: {{ slot.supported_vehicle_type|capitalize if slot.supported_vehicle_type else '—' }}</p>
               <p class="slot-status">
                 Status:
                 {% if slot.is_active %}
@@ -96,35 +97,77 @@
               </p>
             </div>
 
-            {% if user_role == "user" %}
-            {% if slot.is_active and slot.is_available_now %}
-            <form method="POST" action="{{ url_for('reserve_slot', slot_id=slot.id) }}" class="slot-reserve-form">
-              <input type="hidden" name="lot_id" value="{{ lot.id }}">
-              <label for="start_time_{{ slot.id }}" class="reserve-label">Start Time</label>
-              <input
-                      type="datetime-local"
-                      id="start_time_{{ slot.id }}"
-                      name="start_time"
-                      class="reserve-input"
-                      min="{{ now_local }}"
-                      value="{{ start_time }}"
-                      required
-              >
-              <label for="end_time_{{ slot.id }}" class="reserve-label">End Time</label>
-              <input
-                      type="datetime-local"
-                      id="end_time_{{ slot.id }}"
-                      name="end_time"
-                      class="reserve-input"
-                      min="{{ now_local }}"
-                      value="{{ end_time }}"
-                      required
-              >
-              <button type="submit" class="slot-action-btn slot-action-primary">Reserve Now</button>
-            </form>
-            {% else %}
-            <span class="slot-unavailable">Unavailable for the next hour</span>
-            {% endif %}
+            {% if user_role == "driver" %}
+              {% if slot.is_active and slot.is_available_now %}
+                {% if vehicles %}
+                <form method="POST" action="{{ url_for('reserve_slot', slot_id=slot.id) }}" class="slot-reserve-form">
+                  <input type="hidden" name="lot_id" value="{{ lot.id }}">
+
+                  <label for="vehicle_id_{{ slot.id }}" class="reserve-label">Select Vehicle</label>
+                  <select id="vehicle_id_{{ slot.id }}" name="vehicle_id" class="reserve-input" required>
+                    <option value="">Choose your vehicle</option>
+                    {% for vehicle in vehicles %}
+                      <option value="{{ vehicle.id }}">
+                        {{ vehicle.plate_number }} — {{ vehicle.vehicle_type|capitalize if vehicle.vehicle_type else 'Unknown type' }}
+                      </option>
+                    {% endfor %}
+                  </select>
+
+                  <label for="start_date_{{ slot.id }}" class="reserve-label">Start Date</label>
+                  <input
+                    type="date"
+                    id="start_date_{{ slot.id }}"
+                    name="start_date"
+                    class="reserve-input"
+                    value="{{ start_date }}"
+                    required
+                  >
+
+                  <label for="start_time_only_{{ slot.id }}" class="reserve-label">Start Time</label>
+                  <select id="start_time_only_{{ slot.id }}" name="start_time_only" class="reserve-input" required>
+                    <option value="">Select time</option>
+                    {% for opt in time_options %}
+                      <option value="{{ opt.value }}" {% if start_time_only == opt.value %}selected{% endif %}>
+                        {{ opt.label }}
+                      </option>
+                    {% endfor %}
+                  </select>
+
+                  <label for="end_date_{{ slot.id }}" class="reserve-label">End Date</label>
+                  <input
+                    type="date"
+                    id="end_date_{{ slot.id }}"
+                    name="end_date"
+                    class="reserve-input"
+                    value="{{ end_date }}"
+                    required
+                  >
+
+                  <label for="end_time_only_{{ slot.id }}" class="reserve-label">End Time</label>
+                  <select id="end_time_only_{{ slot.id }}" name="end_time_only" class="reserve-input" required>
+                    <option value="">Select time</option>
+                    {% for opt in time_options %}
+                      <option value="{{ opt.value }}" {% if end_time_only == opt.value %}selected{% endif %}>
+                        {{ opt.label }}
+                      </option>
+                    {% endfor %}
+                  </select>
+
+                  <button type="submit" class="slot-action-btn slot-action-soft">Reserve Now</button>
+                </form>
+                {% else %}
+                <span class="slot-unavailable">Add a vehicle first before making a reservation.</span>
+                {% endif %}
+              {% else %}
+                {% if slot.reserved_by_current_user %}
+                  <div class="slot-reserved-state">
+                    <p class="slot-reserved-note">Reserved by you for this selected time range.</p>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">View Reservation</a>
+                  </div>
+                {% else %}
+                  <span class="slot-unavailable">Unavailable for the selected time range</span>
+                {% endif %}
+              {% endif %}
             {% else %}
             <a href="#" class="slot-action-btn slot-action-secondary">Manage Slot</a>
             {% endif %}

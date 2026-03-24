@@ -33,32 +33,33 @@
         <p>Manage your reservations below.</p>
       </div>
 
-      <div style="margin-top: 20px; display: flex; gap: 14px; flex-wrap: wrap;">
-        <a href="{{ url_for('search') }}" class="btn btn-primary">Search Parking</a>
+      <div style="margin-top: 20px; display: flex; gap: 14px; flex-wrap: wrap; align-items: center;">
+        <a href="{{ url_for('search') }}" class="btn btn-secondary active">Search Parking</a>
         <a href="{{ url_for('profile') }}" class="btn btn-secondary">My Profile</a>
         <a href="{{ url_for('vehicles') }}" class="btn btn-secondary">My Vehicles</a>
         <a href="{{ url_for('favorites') }}" class="btn btn-secondary favorite-btn">
           <span class="favorite-heart">♥</span> Favorite Lots
         </a>
-        <a href="{{ url_for('logout') }}" class="btn btn-primary">Logout</a>
+
+        <form
+          method="POST"
+          action="{{ url_for('deactivate_account') }}"
+          onsubmit="return confirm('Are you sure you want to deactivate your account? This will log you out and block future sign-ins until reactivated.');"
+          style="margin: 0;"
+        >
+          <button type="submit" class="btn btn-danger">Deactivate Account</button>
+        </form>
+
+        <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
       </div>
 
-      <div class="dashboard-tabs">
-        <button class="dashboard-tab active" type="button" data-tab="active-tab">
-          Active Reservations
-        </button>
-        <button class="dashboard-tab" type="button" data-tab="history-tab">
-          Reservation History
-        </button>
-      </div>
-
-      <div id="active-tab" class="dashboard-tab-panel active">
-        <h2 style="margin: 8px 0 18px;">Active Reservations</h2>
+      <div style="margin-top: 34px;">
+        <h2 style="margin: 0 0 18px;">Your Reservations</h2>
 
         {% if active_reservations %}
           <div class="reservation-grid">
             {% for reservation in active_reservations %}
-              <div class="reservation-card">
+              <div class="reservation-card reservation-card-soft">
                 <h3>{{ reservation.lot_name }}</h3>
                 <p class="reservation-location">{{ reservation.lot_address }}</p>
 
@@ -69,13 +70,13 @@
                   </div>
                   <div class="reservation-meta-box">
                     <span class="reservation-label">Status</span>
-                    <span class="reservation-value">{{ reservation.status }}</span>
+                    <span class="reservation-value">{{ reservation.status|capitalize }}</span>
                   </div>
                 </div>
 
-                <div class="reservation-time">
-                  <p><strong>Start:</strong> {{ reservation.start_time }}</p>
-                  <p><strong>End:</strong> {{ reservation.end_time }}</p>
+                <div class="reservation-time reservation-time-soft">
+                  <p><strong>Starts</strong><br>{{ reservation.formatted_start }}</p>
+                  <p><strong>Ends</strong><br>{{ reservation.formatted_end }}</p>
                 </div>
 
                 <form method="POST" action="{{ url_for('cancel_reservation', reservation_id=reservation.id) }}">
@@ -84,20 +85,44 @@
               </div>
             {% endfor %}
           </div>
+
+          {% if reservation_history %}
+            <div style="margin-top: 20px;">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                id="show-history-btn"
+              >
+                Past Reservations
+              </button>
+            </div>
+          {% endif %}
         {% else %}
           <div class="empty-state-card">
-            <p>You do not have any active reservations right now.</p>
+            <p>Currently, there are no active reservations.</p>
+
+            {% if reservation_history %}
+              <div style="margin-top: 16px;">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  id="show-history-btn"
+                >
+                  Past Reservations
+                </button>
+              </div>
+            {% endif %}
           </div>
         {% endif %}
       </div>
 
-      <div id="history-tab" class="dashboard-tab-panel">
-        <h2 style="margin: 8px 0 18px;">Reservation History</h2>
+      <div id="history-section" style="margin-top: 34px; display: none;">
+        <h2 style="margin: 0 0 18px;">Past Reservations</h2>
 
         {% if reservation_history %}
           <div class="reservation-grid">
             {% for reservation in reservation_history %}
-              <div class="reservation-card">
+              <div class="reservation-card reservation-card-soft">
                 <h3>{{ reservation.lot_name }}</h3>
                 <p class="reservation-location">{{ reservation.lot_address }}</p>
 
@@ -108,13 +133,13 @@
                   </div>
                   <div class="reservation-meta-box">
                     <span class="reservation-label">Status</span>
-                    <span class="reservation-value">{{ reservation.status }}</span>
+                    <span class="reservation-value">{{ reservation.status|capitalize }}</span>
                   </div>
                 </div>
 
-                <div class="reservation-time">
-                  <p><strong>Start:</strong> {{ reservation.start_time }}</p>
-                  <p><strong>End:</strong> {{ reservation.end_time }}</p>
+                <div class="reservation-time reservation-time-soft">
+                  <p><strong>Started</strong><br>{{ reservation.formatted_start }}</p>
+                  <p><strong>Ended</strong><br>{{ reservation.formatted_end }}</p>
                 </div>
 
                 <p class="reservation-cancelled-note">This reservation is no longer active.</p>
@@ -130,20 +155,15 @@
     </div>
 
     <script>
-      const tabs = document.querySelectorAll(".dashboard-tab");
-      const panels = document.querySelectorAll(".dashboard-tab-panel");
+      const showHistoryBtn = document.getElementById("show-history-btn");
+      const historySection = document.getElementById("history-section");
 
-      tabs.forEach((tab) => {
-        tab.addEventListener("click", () => {
-          const target = tab.dataset.tab;
-
-          tabs.forEach((t) => t.classList.remove("active"));
-          panels.forEach((p) => p.classList.remove("active"));
-
-          tab.classList.add("active");
-          document.getElementById(target).classList.add("active");
+      if (showHistoryBtn && historySection) {
+        showHistoryBtn.addEventListener("click", () => {
+          historySection.style.display = "block";
+          historySection.scrollIntoView({ behavior: "smooth", block: "start" });
         });
-      });
+      }
     </script>
   </body>
 </html>
