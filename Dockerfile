@@ -9,4 +9,4 @@ COPY . .
 
 EXPOSE 5055
 
-CMD ["python", "app.py"]
+CMD ["gunicorn", "-b", "0.0.0.0:8000", "app:app"]
