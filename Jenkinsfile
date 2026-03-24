@@ -36,29 +36,29 @@ pipeline {
     steps {
         echo 'Deploying container...'
         sh '''
-        # Create network (safe)
+        # FORCE CLEAN EVERYTHING
+        docker stop $(docker ps -aq) || true
+        docker rm -f $(docker ps -aq) || true
+
+        # DOUBLE CHECK PORT
+        sudo fuser -k 8000/tcp || true
+
+        # NETWORK
         docker network create smart-network || true
 
-        # Start Postgres DB if not running
-        docker start postgres-db || docker run -d --name postgres-db \
-          --network smart-network \
-          -e POSTGRES_USER=admin \
-          -e POSTGRES_PASSWORD=admin \
-          -e POSTGRES_DB=parking \
-          -p 5432:5432 postgres
+        # START DB
+        docker start postgres-db || true
 
-        # Stop old app
-        docker rm -f smart-parking-dev || true
-
-        # Run new app
-        docker run -d --name smart-parking-dev \
-          --network smart-network \
-          -p 8000:8000 \
-          -e DATABASE_URL=postgresql://admin:admin@postgres-db:5432/parking \
-          smart-parking-app:dev
+        # RUN APP
+        docker run -d \
+        --name smart-parking-dev \
+        --network smart-network \
+        -p 8000:8000 \
+        -e DATABASE_URL=postgresql://admin:admin@postgres-db:5432/parking \
+        smart-parking-app:dev
         '''
     }
-        }
+}
     }
     post {
         success {
