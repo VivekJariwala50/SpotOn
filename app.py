@@ -1,12 +1,11 @@
 from zoneinfo import ZoneInfo
-from datetime import timezone
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 import psycopg2
 import psycopg2.extras
-from datetime import datetime, timedelta
 from functools import wraps
 import os
+from datetime import datetime, timedelta, timezone
 
 app = Flask(__name__, template_folder="pages")
 app.secret_key = os.getenv("Zg6V!5B40&%*+:Y6", "dev-secret")
@@ -538,13 +537,21 @@ def lot_details(lot_id):
 
     if start_time_str and end_time_str:
         try:
-            selected_start = datetime.fromisoformat(start_time_str)
-            selected_end = datetime.fromisoformat(end_time_str)
+            # Keep local values for form repopulation
+            local_start = datetime.fromisoformat(start_time_str)
+            local_end = datetime.fromisoformat(end_time_str)
 
-            start_date = selected_start.strftime("%Y-%m-%d")
-            start_time_only = selected_start.strftime("%H:%M")
-            end_date = selected_end.strftime("%Y-%m-%d")
-            end_time_only = selected_end.strftime("%H:%M")
+            start_date = local_start.strftime("%Y-%m-%d")
+            start_time_only = local_start.strftime("%H:%M")
+            end_date = local_end.strftime("%Y-%m-%d")
+            end_time_only = local_end.strftime("%H:%M")
+
+            # Convert the selected local time to UTC using the server's current local timezone context
+            # This matches how the browser-local values are being interpreted for the app.
+            local_tz = datetime.now().astimezone().tzinfo
+            selected_start = local_start.replace(tzinfo=local_tz).astimezone(timezone.utc)
+            selected_end = local_end.replace(tzinfo=local_tz).astimezone(timezone.utc)
+
         except ValueError:
             flash("Invalid search time range.", "error")
             return redirect(url_for("search"))
@@ -552,7 +559,6 @@ def lot_details(lot_id):
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-    # Fetch lot details
     cur.execute("""
         SELECT
             pl.id,
@@ -580,15 +586,14 @@ def lot_details(lot_id):
         flash("Parking lot not found.", "error")
         return redirect(url_for("search"))
 
-    # Fetch slot details
     if selected_start and selected_end:
         cur.execute("""
             SELECT
                 ps.id,
                 ps.label,
                 ps.slot_type,
-                ps.is_active,
                 ps.supported_vehicle_type,
+                ps.is_active,
                 NOT EXISTS (
                     SELECT 1
                     FROM reservations r
@@ -623,8 +628,8 @@ def lot_details(lot_id):
                 ps.id,
                 ps.label,
                 ps.slot_type,
-                ps.is_active,
                 ps.supported_vehicle_type,
+                ps.is_active,
                 TRUE AS is_available_now,
                 FALSE AS reserved_by_current_user
             FROM parking_slots ps
@@ -634,7 +639,6 @@ def lot_details(lot_id):
 
     slots = cur.fetchall()
 
-    # Fetch driver vehicles
     cur.execute("""
         SELECT id, plate_number, vehicle_make, vehicle_model, vehicle_color, vehicle_type
         FROM vehicles
