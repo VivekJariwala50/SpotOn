@@ -62,7 +62,38 @@ def record_transaction(cur, reservation_id, user_id, transaction_type, amount, s
 
 @app.route("/")
 def home():
-    return render_template("index.html")
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    cur.execute("""
+        SELECT name, address
+        FROM parking_lots
+        ORDER BY name ASC
+    """)
+    parking_lots = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    homepage_garage_suggestions = []
+    seen_suggestions = set()
+
+    for lot in parking_lots:
+        lot_name = (lot["name"] or "").strip()
+        lot_address = (lot["address"] or "").strip()
+
+        if lot_name and lot_name.lower() not in seen_suggestions:
+            homepage_garage_suggestions.append(lot_name)
+            seen_suggestions.add(lot_name.lower())
+
+        if lot_address and lot_address.lower() not in seen_suggestions:
+            homepage_garage_suggestions.append(lot_address)
+            seen_suggestions.add(lot_address.lower())
+
+    return render_template(
+        "index.html",
+        homepage_garage_suggestions=homepage_garage_suggestions
+    )
 
 
 @app.route("/signup", methods=["GET", "POST"])
@@ -611,7 +642,6 @@ def operator_inventory():
     )
 
 @app.route("/search")
-@login_required(role="driver")
 def search():
     location = request.args.get("location", "").strip()
 
