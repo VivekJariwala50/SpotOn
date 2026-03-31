@@ -227,6 +227,46 @@
           </div>
         {% endif %}
       </div>
+
+      <div style="margin-top: 34px;">
+        <h2 style="margin: 0 0 18px;">Recent Transactions</h2>
+
+        {% if recent_transactions %}
+          <div class="reservation-grid">
+            {% for transaction in recent_transactions %}
+              <div class="reservation-card reservation-card-soft">
+                <h3>{{ transaction.formatted_type }}</h3>
+                <p class="reservation-location">
+                  {% if transaction.lot_name %}
+                    {{ transaction.lot_name }}{% if transaction.slot_label %} • Slot {{ transaction.slot_label }}{% endif %}
+                  {% else %}
+                    Reservation reference available
+                  {% endif %}
+                </p>
+
+                <div class="reservation-meta transaction-meta" style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: stretch;">
+                  <div class="reservation-meta-box" style="width: 100%; min-width: 0; max-width: none;">
+                    <span class="reservation-label">Amount</span>
+                    <span class="reservation-value">{{ transaction.formatted_amount }}</span>
+                  </div>
+                  <div class="reservation-meta-box" style="width: 100%; min-width: 0; max-width: none;">
+                    <span class="reservation-label">Status</span>
+                    <span class="transaction-status-badge transaction-status-{{ transaction.status|lower }}" style="display: inline-flex; width: 100%; justify-content: center;">{{ transaction.status|capitalize }}</span>
+                  </div>
+                </div>
+
+                <div class="reservation-time reservation-time-soft">
+                  <p><strong>Created</strong><br>{{ transaction.formatted_created_at }}</p>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state-card">
+            <p>No transactions recorded yet.</p>
+          </div>
+        {% endif %}
+      </div>
     </div>
 
     <script>

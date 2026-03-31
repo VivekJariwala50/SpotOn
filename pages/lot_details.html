@@ -145,16 +145,75 @@
                   >
 
                   <label for="end_time_only_{{ slot.id }}" class="reserve-label">End Time</label>
-                  <select id="end_time_only_{{ slot.id }}" name="end_time_only" class="reserve-input" required>
-                    <option value="">Select time</option>
-                    {% for opt in time_options %}
-                      <option value="{{ opt.value }}" {% if end_time_only == opt.value %}selected{% endif %}>
-                        {{ opt.label }}
-                      </option>
-                    {% endfor %}
-                  </select>
+<select id="end_time_only_{{ slot.id }}" name="end_time_only" class="reserve-input" required>
+  <option value="">Select time</option>
+  {% for opt in time_options %}
+    <option value="{{ opt.value }}" {% if end_time_only == opt.value %}selected{% endif %}>
+      {{ opt.label }}
+    </option>
+  {% endfor %}
+</select>
 
-                  <button type="submit" class="slot-action-btn slot-action-soft">Reserve Now</button>
+<div class="slot-payment-shell">
+  <p class="slot-payment-title">Payment Details</p>
+  <p class="slot-payment-note">Demo checkout flow for online payment processing.</p>
+
+  <label for="cardholder_name_{{ slot.id }}" class="reserve-label">Cardholder Name</label>
+  <input
+    type="text"
+    id="cardholder_name_{{ slot.id }}"
+    name="cardholder_name"
+    class="reserve-input"
+    placeholder="Name on card"
+    required
+  >
+
+  <label for="card_number_{{ slot.id }}" class="reserve-label">Card Number</label>
+  <input
+          type="text"
+          id="card_number_{{ slot.id }}"
+          name="card_number"
+          class="reserve-input card-number-input"
+          placeholder="4111 1111 1111 1111"
+          inputmode="numeric"
+          maxlength="19"
+          autocomplete="cc-number"
+          required
+  >
+
+  <div class="slot-payment-grid">
+    <div>
+      <label for="expiry_{{ slot.id }}" class="reserve-label">Expiry</label>
+      <input
+          type="text"
+          id="expiry_{{ slot.id }}"
+          name="expiry"
+          class="reserve-input expiry-input"
+          placeholder="MM/YY"
+          maxlength="5"
+          autocomplete="cc-exp"
+          required
+      >
+    </div>
+
+    <div>
+      <label for="cvv_{{ slot.id }}" class="reserve-label">CVV</label>
+      <input
+            type="text"
+            id="cvv_{{ slot.id }}"
+            name="cvv"
+            class="reserve-input cvv-input"
+            placeholder="123"
+            inputmode="numeric"
+            maxlength="4"
+            autocomplete="cc-csc"
+            required
+>
+    </div>
+  </div>
+</div>
+
+<button type="submit" class="slot-action-btn slot-action-soft">Pay &amp; Reserve</button>
                 </form>
                 {% else %}
                 <span class="slot-unavailable">Add a vehicle first before making a reservation.</span>
@@ -293,20 +352,45 @@
         }
       }
 
-      document.addEventListener("DOMContentLoaded", () => {
-        document.querySelectorAll(".slot-reserve-form").forEach((form) => {
-          const startDate = form.querySelector('input[name="start_date"]');
-          const startTime = form.querySelector('select[name="start_time_only"]');
-          const endDate = form.querySelector('input[name="end_date"]');
-          const endTime = form.querySelector('select[name="end_time_only"]');
+      document.querySelectorAll(".slot-reserve-form").forEach((form) => {
+  const startDate = form.querySelector('input[name="start_date"]');
+  const startTime = form.querySelector('select[name="start_time_only"]');
+  const endDate = form.querySelector('input[name="end_date"]');
+  const endTime = form.querySelector('select[name="end_time_only"]');
+  const cardNumberInput = form.querySelector(".card-number-input");
+  const expiryInput = form.querySelector(".expiry-input");
+  const cvvInput = form.querySelector(".cvv-input");
 
-          syncReservationForm(form);
+  syncReservationForm(form);
 
-          [startDate, startTime, endDate].forEach((el) => {
-            el.addEventListener("change", () => syncReservationForm(form));
-          });
-        });
-      });
+  [startDate, startTime, endDate].forEach((el) => {
+    el.addEventListener("change", () => syncReservationForm(form));
+  });
+
+  if (cardNumberInput) {
+    cardNumberInput.addEventListener("input", (e) => {
+      let digits = e.target.value.replace(/\D/g, "").slice(0, 16);
+      e.target.value = digits.replace(/(.{4})/g, "$1 ").trim();
+    });
+  }
+
+  if (expiryInput) {
+    expiryInput.addEventListener("input", (e) => {
+      let digits = e.target.value.replace(/\D/g, "").slice(0, 4);
+      if (digits.length >= 3) {
+        e.target.value = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+      } else {
+        e.target.value = digits;
+      }
+    });
+  }
+
+  if (cvvInput) {
+    cvvInput.addEventListener("input", (e) => {
+      e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4);
+    });
+  }
+});
     </script>
   </body>
 </html>

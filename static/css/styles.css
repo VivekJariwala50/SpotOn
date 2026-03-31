@@ -1939,3 +1939,65 @@ select.reserve-input {
     grid-template-columns: 1fr;
   }
 }
+.transaction-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 110px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.transaction-status-success {
+  background: #eefaf1;
+  color: #1f7a36;
+  border: 1px solid #bfe3c8;
+}
+.transaction-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.transaction-meta .reservation-meta-box {
+  min-width: 0;
+}
+
+.slot-payment-shell {
+  margin-top: 8px;
+  padding: 16px;
+  border: 1px solid #e6e6e6;
+  border-radius: 18px;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.slot-payment-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #111111;
+}
+
+.slot-payment-note {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: #666666;
+  line-height: 1.4;
+}
+
+.slot-payment-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 700px) {
+  .slot-payment-grid {
+    grid-template-columns: 1fr;
+  }
+}

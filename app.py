@@ -49,6 +49,16 @@ def get_db_connection():
         password="NewStrongPassword123"
     )
 
+# --- Helper to record transactions ---
+def record_transaction(cur, reservation_id, user_id, transaction_type, amount, status="SUCCESS"):
+    cur.execute(
+        """
+        INSERT INTO transactions (reservation_id, user_id, transaction_type, amount, status)
+        VALUES (%s, %s, %s, %s, %s)
+        """,
+        (reservation_id, user_id, transaction_type, amount, status)
+    )
+
 
 @app.route("/")
 def home():
@@ -222,6 +232,26 @@ def dashboard():
     """, (session.get("user_id"),))
     reservation_history = cur.fetchall()
 
+    cur.execute("""
+        SELECT
+            t.id,
+            t.reservation_id,
+            t.transaction_type,
+            t.amount,
+            t.status,
+            t.created_at,
+            pl.name AS lot_name,
+            ps.label AS slot_label
+        FROM transactions t
+        LEFT JOIN reservations r ON t.reservation_id = r.id
+        LEFT JOIN parking_slots ps ON r.slot_id = ps.id
+        LEFT JOIN parking_lots pl ON ps.lot_id = pl.id
+        WHERE t.user_id = %s
+        ORDER BY t.created_at DESC
+        LIMIT 5
+    """, (session.get("user_id"),))
+    recent_transactions = cur.fetchall()
+
     cur.close()
     conn.close()
 
@@ -229,6 +259,14 @@ def dashboard():
         if not dt_value:
             return "—"
         return dt_value.strftime("%b %d, %Y • %I:%M %p").replace(" 0", " ")
+
+    def format_currency(amount):
+        if amount is None:
+            return "—"
+        amount_value = float(amount)
+        if amount_value < 0:
+            return f"-${abs(amount_value):.2f}"
+        return f"${amount_value:.2f}"
 
     def format_status(reservation):
         if reservation["status"] == "CANCELLED":
@@ -275,6 +313,11 @@ def dashboard():
         add_edit_fields(reservation)
         add_cost_fields(reservation)
 
+    for transaction in recent_transactions:
+        transaction["formatted_amount"] = format_currency(transaction["amount"])
+        transaction["formatted_created_at"] = format_dt(transaction["created_at"])
+        transaction["formatted_type"] = transaction["transaction_type"].replace("_", " ").title() if transaction["transaction_type"] else "—"
+
     time_options = []
     base_time = datetime.strptime("00:00", "%H:%M")
     for i in range(48):
@@ -288,6 +331,7 @@ def dashboard():
         user_role=session.get("user_role"),
         active_reservations=active_reservations,
         reservation_history=reservation_history,
+        recent_transactions=recent_transactions,
         time_options=time_options
     )
 
@@ -371,12 +415,14 @@ def extend_reservation(reservation_id):
             SET end_time = %s
             WHERE id = %s
         """, (new_end_time, reservation["id"]))
+        record_transaction(cur, reservation["id"], session.get("user_id"), "EXTEND_RESERVATION", added_cost, "SUCCESS")
         conn.commit()
 
         hours_added = extension_minutes / 60
         flash(
             f"Reservation extended successfully by {hours_added:g} hour(s). "
-            f"Added cost: ${added_cost:.2f}. New estimated total: ${new_total_cost:.2f}",
+            f"Additional amount of ${added_cost:.2f} will be auto-charged to the same card ending in 1111. "
+            f"New estimated total: ${new_total_cost:.2f}",
             "success"
         )
         return redirect(url_for("dashboard"))
@@ -461,8 +507,13 @@ def modify_reservation(reservation_id):
             flash("This reservation cannot be modified because the slot is not available for the selected time range.", "error")
             return redirect(url_for("dashboard"))
 
+        original_duration_hours = (reservation["end_time"] - reservation["start_time"]).total_seconds() / 3600
+        original_total_cost = round(float(reservation["price_per_hour"] or 0) * original_duration_hours, 2)
+
         new_duration_hours = (end_time - start_time).total_seconds() / 3600
         new_total_cost = round(float(reservation["price_per_hour"] or 0) * new_duration_hours, 2)
+
+        cost_difference = round(new_total_cost - original_total_cost, 2)
 
         cur.execute("""
             UPDATE reservations
@@ -470,9 +521,28 @@ def modify_reservation(reservation_id):
                 end_time = %s
             WHERE id = %s
         """, (start_time, end_time, reservation["id"]))
+        record_transaction(cur, reservation["id"], session.get("user_id"), "MODIFY_RESERVATION", cost_difference, "SUCCESS")
         conn.commit()
 
-        flash(f"Reservation updated successfully. New estimated total: ${new_total_cost:.2f}", "success")
+        if cost_difference > 0:
+            flash(
+                f"Reservation updated successfully. Additional amount of ${cost_difference:.2f} "
+                f"will be auto-charged to the same card ending in 1111. "
+                f"New estimated total: ${new_total_cost:.2f}",
+                "success"
+            )
+        elif cost_difference < 0:
+            flash(
+                f"Reservation updated successfully. Refund of ${abs(cost_difference):.2f} "
+                f"will be issued to the same card ending in 1111. "
+                f"New estimated total: ${new_total_cost:.2f}",
+                "success"
+            )
+        else:
+            flash(
+                f"Reservation updated successfully. Total remains ${new_total_cost:.2f}.",
+                "success"
+            )
         return redirect(url_for("dashboard"))
 
     finally:
@@ -918,6 +988,10 @@ def reserve_slot(slot_id):
     lot_id = request.form.get("lot_id", "").strip()
     vehicle_id = request.form.get("vehicle_id", "").strip()
     user_timezone = request.form.get("user_timezone", "UTC").strip()
+    cardholder_name = request.form.get("cardholder_name", "").strip()
+    card_number = request.form.get("card_number", "").strip()
+    expiry = request.form.get("expiry", "").strip()
+    cvv = request.form.get("cvv", "").strip()
 
     try:
         user_tz = ZoneInfo(user_timezone)
@@ -945,6 +1019,25 @@ def reserve_slot(slot_id):
 
     if not lot_id or not vehicle_id or not start_time_str or not end_time_str:
         flash("Please select a vehicle and provide reservation start and end times.", "error")
+        return back_to_lot()
+
+    cleaned_card_number = "".join(ch for ch in card_number if ch.isdigit())
+    cleaned_cvv = "".join(ch for ch in cvv if ch.isdigit())
+
+    if not cardholder_name or not cleaned_card_number or not expiry or not cleaned_cvv:
+        flash("Please complete the payment details before reserving the slot.", "error")
+        return back_to_lot()
+
+    if cleaned_card_number != "8111111111111111":
+        flash("For demo payment, use card number 8111 1111 1111 1111.", "error")
+        return back_to_lot()
+
+    if cleaned_cvv != "007":
+        flash("For demo payment, use CVV 007.", "error")
+        return back_to_lot()
+
+    if len(expiry) != 5 or expiry[2] != "/":
+        flash("Please enter expiry in MM/YY format.", "error")
         return back_to_lot()
 
     try:
@@ -1031,21 +1124,37 @@ def reserve_slot(slot_id):
             """
             INSERT INTO reservations (user_id, slot_id, start_time, end_time, status)
             VALUES (%s, %s, %s, %s, 'CONFIRMED')
+            RETURNING id
             """,
             (session.get("user_id"), slot_id, start_time, end_time)
+        )
+        inserted_reservation = cur.fetchone()
+        record_transaction(
+            cur,
+            inserted_reservation["id"],
+            session.get("user_id"),
+            "CREATE_RESERVATION",
+            total_cost,
+            "SUCCESS"
         )
         conn.commit()
 
         flash(
+            f"Demo payment processed successfully for card ending in {cleaned_card_number[-4:]}. "
             f"Reservation confirmed for vehicle {selected_vehicle['plate_number']}. "
             f"Estimated cost: ${total_cost:.2f}",
             "success"
         )
         return back_to_lot()
 
-    except psycopg2.Error:
+    except psycopg2.errors.ExclusionViolation:
         conn.rollback()
         flash("That slot is already reserved for the selected time range.", "error")
+        return back_to_lot()
+    except psycopg2.Error as e:
+        conn.rollback()
+        print("Database error in reserve_slot:", e)
+        flash("Something went wrong while saving the reservation.", "error")
         return back_to_lot()
 
     finally:
@@ -1059,9 +1168,17 @@ def cancel_reservation(reservation_id):
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     cur.execute("""
-        SELECT id, user_id, status
-        FROM reservations
-        WHERE id = %s
+        SELECT
+            r.id,
+            r.user_id,
+            r.status,
+            r.start_time,
+            r.end_time,
+            pl.price_per_hour
+        FROM reservations r
+        JOIN parking_slots ps ON r.slot_id = ps.id
+        JOIN parking_lots pl ON ps.lot_id = pl.id
+        WHERE r.id = %s
     """, (reservation_id,))
     reservation = cur.fetchone()
 
@@ -1083,17 +1200,25 @@ def cancel_reservation(reservation_id):
         flash("Only confirmed reservations can be cancelled.", "error")
         return redirect(url_for("dashboard"))
 
+    duration_hours = (reservation["end_time"] - reservation["start_time"]).total_seconds() / 3600
+    refund_amount = round(float(reservation["price_per_hour"] or 0) * duration_hours, 2)
+
     cur.execute("""
         UPDATE reservations
         SET status = 'CANCELLED'
         WHERE id = %s
     """, (reservation_id,))
+    record_transaction(cur, reservation["id"], session.get("user_id"), "CANCEL_RESERVATION", -refund_amount, "SUCCESS")
     conn.commit()
 
     cur.close()
     conn.close()
 
-    flash("Reservation cancelled successfully.", "success")
+    flash(
+        f"Reservation cancelled successfully. Refund of ${refund_amount:.2f} "
+        f"will be issued to the same card ending in 1111.",
+        "success"
+    )
     return redirect(url_for("dashboard"))
 
 
