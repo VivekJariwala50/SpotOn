@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Transaction History — SpotOn Smart Parking</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+    <style>
+      .tx-shell {
+        max-width: 980px;
+      }
+
+      .tx-shell .auth-header {
+        margin-bottom: 14px;
+      }
+
+      .tx-shell .auth-header h1 {
+        margin: 4px 0 4px;
+        font-size: 1.75rem;
+      }
+
+      .tx-shell .auth-header p {
+        font-size: 0.9rem;
+      }
+
+      .tx-shell .dash-section {
+        margin-top: 16px;
+      }
+
+      .tx-shell .dash-section__head {
+        margin-bottom: 12px;
+      }
+
+      .tx-shell .dash-section__title {
+        font-size: 1.05rem;
+      }
+
+      .tx-shell .btn {
+        min-height: 40px;
+        padding: 8px 14px;
+        font-size: 0.86rem;
+      }
+
+      .tx-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .tx-card {
+        padding: 16px;
+        border-radius: 16px;
+      }
+
+      .tx-card h3 {
+        margin: 0 0 4px;
+        font-size: 1.1rem;
+        letter-spacing: 0.01em;
+      }
+
+      .tx-card .reservation-location {
+        margin: 0 0 10px;
+        font-size: 0.9rem;
+      }
+
+      .tx-card .reservation-meta {
+        margin-bottom: 10px;
+      }
+
+      .tx-card .reservation-meta-box {
+        border-radius: 12px;
+        padding: 10px 12px;
+        min-height: auto;
+      }
+
+      .tx-card .reservation-label {
+        font-size: 0.66rem;
+        margin-bottom: 4px;
+      }
+
+      .tx-card .reservation-value {
+        font-size: 1rem;
+      }
+
+      .tx-details {
+        margin-bottom: 0;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .tx-details p {
+        margin: 0;
+        font-size: 0.85rem;
+        line-height: 1.35;
+      }
+
+      .tx-details strong {
+        font-size: 0.72rem;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        color: #6b7280;
+      }
+
+      @media (max-width: 760px) {
+        .tx-details {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body class="auth-page auth-page-with-nav">
+    {% include "_driver_static_nav.html" %}
+    <div class="auth-card auth-card--wide compact-page tx-shell">
+      <div class="auth-header">
+        <h1>Transaction history</h1>
+        <p>View your payment and refund timeline.</p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="flash-message {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <div class="dash-section">
+        <div class="dash-section__head">
+          <h2 class="dash-section__title">All transactions</h2>
+          <form
+            method="POST"
+            action="{{ url_for('clear_transaction_history') }}"
+            class="form-inline-reset"
+            onsubmit="return confirm('Clear your full transaction history? This cannot be undone.');"
+          >
+            <button type="submit" class="btn btn-secondary">Clear history</button>
+          </form>
+        </div>
+
+        {% if transaction_history %}
+          <div class="reservation-grid tx-grid">
+            {% for transaction in transaction_history %}
+              <div class="reservation-card reservation-card-soft tx-card">
+                <h3>{{ transaction.display_type }}</h3>
+                <p class="reservation-location">
+                  {% if transaction.lot_name %}
+                    {{ transaction.lot_name }}{% if transaction.slot_label %} • Slot {{ transaction.slot_label }}{% endif %}
+                  {% else %}
+                    Reservation reference available
+                  {% endif %}
+                </p>
+
+                <div class="reservation-meta transaction-meta">
+                  <div class="reservation-meta-box">
+                    <span class="reservation-label">Amount</span>
+                    <span class="reservation-value">{{ transaction.formatted_amount }}</span>
+                  </div>
+                  <div class="reservation-meta-box">
+                    <span class="reservation-label">Status</span>
+                    <span class="transaction-status-badge transaction-status-{{ transaction.status|lower }}">{{ transaction.status|capitalize }}</span>
+                  </div>
+                </div>
+
+                <div class="reservation-time reservation-time-soft tx-details">
+                  <p><strong>Booking ID</strong><br>
+                    {% if transaction.booking_alias %}
+                      {{ transaction.booking_alias }}
+                    {% elif transaction.reservation_id %}
+                      {{ transaction.reservation_id }}
+                    {% else %}
+                      —
+                    {% endif %}
+                  </p>
+                  <p><strong>Type</strong><br>{{ transaction.formatted_action }}</p>
+                  <p><strong>Timestamp</strong><br>{{ transaction.formatted_created_at }}</p>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state-card">
+            <p>No transactions recorded yet.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </body>
+</html>

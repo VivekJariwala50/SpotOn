@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Support FAQ — SpotOn Smart Parking</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+    <style>
+      .support-faq-toolbar {
+        margin: 10px 0 18px;
+      }
+
+      .support-faq-search {
+        width: 100%;
+        max-width: 460px;
+      }
+
+      .support-faq-card {
+        text-decoration: none;
+        color: inherit;
+        transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .support-faq-card:hover,
+      .support-faq-card:focus-within {
+        background: #f2f2f2;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+      }
+
+      .support-faq-kicker {
+        margin: 0 0 6px;
+        font-size: 0.72rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-weight: 800;
+        color: #7a7a7a;
+      }
+
+      .support-faq-updated {
+        margin: 16px 0 0;
+        font-size: 0.82rem;
+        color: #707070;
+      }
+    </style>
+  </head>
+  <body class="auth-page auth-page-with-nav">
+    {% if is_logged_in %}
+      {% include "_driver_static_nav.html" %}
+    {% endif %}
+    <div class="auth-card auth-card--wide">
+      <div class="auth-header">
+        <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
+        <h1>Support FAQ</h1>
+        <p>Quick answers for booking, billing, and account questions.</p>
+      </div>
+
+      <div class="dash-section">
+        <div class="dash-section__head">
+          <h2 class="dash-section__title">Frequently asked questions</h2>
+        </div>
+
+        <div class="support-faq-toolbar">
+          <input id="supportFaqSearch" class="reserve-input support-faq-search" type="search" placeholder="Search help topics..." />
+        </div>
+
+        <div class="reservation-grid" id="supportFaqGrid">
+          <a href="{{ url_for('support_self_service') }}" class="reservation-card reservation-card-soft support-faq-card" data-faq-text="booking id receipt self service lookup reservation">
+            <p class="support-faq-kicker">Booking</p>
+            <h3>How do I find my booking ID?</h3>
+            <p class="reservation-location">
+              Your booking ID appears on the booking receipt right after checkout.
+            </p>
+          </a>
+
+          <a href="{{ url_for('support_self_service') }}" class="reservation-card reservation-card-soft support-faq-card" data-faq-text="guest support self service booking lookup">
+            <p class="support-faq-kicker">Booking</p>
+            <h3>Can guests use support self-service?</h3>
+            <p class="reservation-location">
+              Yes. Open self-service and enter the booking ID to check booking details.
+            </p>
+          </a>
+
+          <a href="{{ url_for('dashboard') if is_logged_in else url_for('search') }}" class="reservation-card reservation-card-soft support-faq-card" data-faq-text="cancel modify reservation dashboard">
+            <p class="support-faq-kicker">Account</p>
+            <h3>Can I cancel or modify a reservation?</h3>
+            <p class="reservation-location">
+              Logged-in drivers can modify, extend, or cancel reservations from the dashboard.
+            </p>
+          </a>
+
+          <a href="{{ url_for('system_status_page') }}" class="reservation-card reservation-card-soft support-faq-card" data-faq-text="system uptime status health">
+            <p class="support-faq-kicker">System</p>
+            <h3>Where can I check system uptime?</h3>
+            <p class="reservation-location">
+              Visit the system status page for current platform availability.
+            </p>
+          </a>
+        </div>
+      </div>
+
+      <div class="dash-toolbar">
+        <a href="{{ url_for('support_self_service') }}" class="btn btn-primary">Self-service lookup</a>
+        <a href="{{ url_for('support_contact') }}" class="btn btn-secondary">Contact support</a>
+        <a href="{{ url_for('system_status_page') }}" class="btn btn-secondary">System status</a>
+        {% if is_logged_in %}
+          <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Back to dashboard</a>
+        {% else %}
+          <a href="{{ url_for('home') }}" class="btn btn-secondary">Back to home</a>
+        {% endif %}
+      </div>
+      <p class="support-faq-updated">Last updated: Apr 2026</p>
+    </div>
+    <script>
+      const faqSearch = document.getElementById("supportFaqSearch");
+      const faqCards = Array.from(document.querySelectorAll("#supportFaqGrid .support-faq-card"));
+      faqSearch?.addEventListener("input", (event) => {
+        const query = (event.target.value || "").trim().toLowerCase();
+        faqCards.forEach((card) => {
+          const haystack = (card.dataset.faqText || card.textContent || "").toLowerCase();
+          card.style.display = !query || haystack.includes(query) ? "" : "none";
+        });
+      });
+    </script>
+  </body>
+</html>

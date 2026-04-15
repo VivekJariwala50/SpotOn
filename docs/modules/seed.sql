@@ -1,3 +1,4 @@
+-- Sample data only; align column types and FKs with your live DB (see docs/modules/schema.sql).
 INSERT INTO parking_lots (name, address)
 VALUES
 ('Downtown Central Garage', '123 Main St, Jersey City, NJ'),

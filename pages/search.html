@@ -9,8 +9,11 @@
       href="{{ url_for('static', filename='css/styles.css') }}"
     />
   </head>
-  <body class="auth-page">
-    <div class="auth-card" style="max-width: 1180px;">
+  <body class="auth-page auth-page-with-nav">
+    {% if user_email %}
+      {% include "_driver_static_nav.html" %}
+    {% endif %}
+    <div class="auth-card auth-card--wide compact-page">
       <div class="auth-header">
         <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
         <h1>Find Parking</h1>
@@ -28,91 +31,34 @@
       {% endwith %}
 
       <div class="search-topbar">
-  <p style="margin: 0; color: #777;">
-    {% if user_email and user_role %}
-      Logged in as <strong>{{ user_email }}</strong> ({{ user_role }})
-    {% else %}
-      Browsing as guest
-    {% endif %}
-  </p>
+        <div class="search-topbar-actions">
+          {% if user_role == "driver" %}
+            <a href="{{ url_for('dashboard') }}" class="topbar-btn topbar-btn-secondary">
+              Back to Dashboard
+            </a>
+          {% elif user_role == "operator" %}
+            <a href="{{ url_for('operator_dashboard') }}" class="topbar-btn topbar-btn-secondary">
+              Back to Dashboard
+            </a>
+          {% elif user_role == "admin" %}
+            <a href="{{ url_for('admin_dashboard') }}" class="topbar-btn topbar-btn-secondary">
+              Back to Dashboard
+            </a>
+          {% else %}
+            <a href="{{ url_for('home') }}" class="topbar-btn topbar-btn-secondary">
+              Back to Home
+            </a>
+          {% endif %}
 
-  <div class="search-topbar-actions">
-    {% if user_role == "driver" %}
-      <a href="{{ url_for('dashboard') }}" class="topbar-btn topbar-btn-secondary">
-        Back to Dashboard
-      </a>
-    {% elif user_role == "operator" %}
-      <a href="{{ url_for('operator_dashboard') }}" class="topbar-btn topbar-btn-secondary">
-        Back to Dashboard
-      </a>
-    {% elif user_role == "admin" %}
-      <a href="{{ url_for('admin_dashboard') }}" class="topbar-btn topbar-btn-secondary">
-        Back to Dashboard
-      </a>
-    {% else %}
-      <a href="{{ url_for('home') }}" class="topbar-btn topbar-btn-secondary">
-        Back to Home
-      </a>
-    {% endif %}
-
-    {% if user_email %}
-      <a href="{{ url_for('logout') }}" class="topbar-btn topbar-btn-primary">
-        Logout
-      </a>
-    {% else %}
-      <a href="{{ url_for('login') }}" class="topbar-btn topbar-btn-primary">
-        Sign in
-      </a>
-    {% endif %}
-  </div>
-</div>
-
-      <div class="quick-time-panel">
-        <div class="quick-time-group">
-          <span class="quick-time-label">Day</span>
-          <div class="quick-time-actions">
-            <button
-              type="button"
-              class="quick-time-btn {% if quick_day == 'today' %}active{% endif %}"
-              data-day="today"
-            >
-              Today
-            </button>
-            <button
-              type="button"
-              class="quick-time-btn {% if quick_day == 'tomorrow' %}active{% endif %}"
-              data-day="tomorrow"
-            >
-              Tomorrow
-            </button>
-          </div>
-        </div>
-
-        <div class="quick-time-group">
-          <span class="quick-time-label">Duration</span>
-          <div class="quick-time-actions">
-            <button
-              type="button"
-              class="quick-time-btn {% if quick_duration == '30' %}active{% endif %}"
-              data-duration="30"
-            >
-              30 min
-            </button>
-            <button
-              type="button"
-              class="quick-time-btn {% if quick_duration == '60' %}active{% endif %}"
-              data-duration="60"
-            >
-              1 hour
-            </button>
-            <button
-              type="button"
-              class="quick-time-btn {% if quick_duration == '120' %}active{% endif %}"
-              data-duration="120"
-            >
-              2 hours
-            </button>
-          </div>
+          {% if user_email %}
+            <a href="{{ url_for('logout') }}" class="topbar-btn topbar-btn-primary">
+              Logout
+            </a>
+          {% else %}
+            <a href="{{ url_for('login') }}" class="topbar-btn topbar-btn-primary">
+              Sign in
+            </a>
+          {% endif %}
         </div>
       </div>
 
@@ -120,136 +66,189 @@
         <input type="hidden" name="quick_day" id="quick_day" value="{{ quick_day or 'today' }}">
         <input type="hidden" name="quick_duration" id="quick_duration" value="{{ quick_duration or '60' }}">
 
-        <div class="search-form-grid">
-          <div class="search-field-wide">
-            <label class="reserve-label" for="location">Location</label>
-            <input
-              type="text"
-              id="location"
-              name="location"
-              class="reserve-input"
-              placeholder="Search by lot name or address"
-              value="{{ location }}"
-            >
+        <div class="search-filters-card">
+          <div class="search-filters-section search-filters-section--quick">
+            <p class="search-section-label">Quick presets</p>
+            <div class="quick-time-panel search-quick-inline">
+              <div class="quick-time-group">
+                <span class="quick-time-label">Day</span>
+                <div class="quick-time-actions">
+                  <button
+                    type="button"
+                    class="quick-time-btn {% if quick_day == 'today' %}active{% endif %}"
+                    data-day="today"
+                  >
+                    Today
+                  </button>
+                  <button
+                    type="button"
+                    class="quick-time-btn {% if quick_day == 'tomorrow' %}active{% endif %}"
+                    data-day="tomorrow"
+                  >
+                    Tomorrow
+                  </button>
+                </div>
+              </div>
+              <div class="quick-time-group">
+                <span class="quick-time-label">Duration</span>
+                <div class="quick-time-actions">
+                  <button
+                    type="button"
+                    class="quick-time-btn {% if quick_duration == '30' %}active{% endif %}"
+                    data-duration="30"
+                  >
+                    30 min
+                  </button>
+                  <button
+                    type="button"
+                    class="quick-time-btn {% if quick_duration == '60' %}active{% endif %}"
+                    data-duration="60"
+                  >
+                    1 hour
+                  </button>
+                  <button
+                    type="button"
+                    class="quick-time-btn {% if quick_duration == '120' %}active{% endif %}"
+                    data-duration="120"
+                  >
+                    2 hours
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div>
-            <label class="reserve-label" for="start_date">Start Date</label>
-            <input
-              type="date"
-              id="start_date"
-              name="start_date"
-              class="reserve-input"
-              value="{{ start_date }}"
-            >
+          <div class="search-filters-section">
+            <div class="search-form-grid-primary">
+              <div class="search-location-row">
+                <label class="reserve-label" for="location">Location</label>
+                <input
+                  type="text"
+                  id="location"
+                  name="location"
+                  class="reserve-input"
+                  placeholder="Search by lot name or address"
+                  value="{{ location }}"
+                >
+              </div>
+              <div class="search-time-grid">
+                <div>
+                  <label class="reserve-label" for="start_date">Start date</label>
+                  <input
+                    type="date"
+                    id="start_date"
+                    name="start_date"
+                    class="reserve-input"
+                    value="{{ start_date }}"
+                  >
+                </div>
+                <div>
+                  <label class="reserve-label" for="start_time_only">Start time</label>
+                  <select id="start_time_only" name="start_time_only" class="reserve-input">
+                    <option value="">Select time</option>
+                    {% for opt in time_options %}
+                      <option value="{{ opt.value }}" {% if start_time_only == opt.value %}selected{% endif %}>
+                        {{ opt.label }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div>
+                  <label class="reserve-label" for="end_date">End date</label>
+                  <input
+                    type="date"
+                    id="end_date"
+                    name="end_date"
+                    class="reserve-input"
+                    value="{{ end_date }}"
+                  >
+                </div>
+                <div>
+                  <label class="reserve-label" for="end_time_only">End time</label>
+                  <select id="end_time_only" name="end_time_only" class="reserve-input">
+                    <option value="">Select time</option>
+                    {% for opt in time_options %}
+                      <option value="{{ opt.value }}" {% if end_time_only == opt.value %}selected{% endif %}>
+                        {{ opt.label }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div>
-            <label class="reserve-label" for="start_time_only">Start Time</label>
-            <select id="start_time_only" name="start_time_only" class="reserve-input">
-              <option value="">Select time</option>
-              {% for opt in time_options %}
-                <option value="{{ opt.value }}" {% if start_time_only == opt.value %}selected{% endif %}>
-                  {{ opt.label }}
-                </option>
-              {% endfor %}
-            </select>
-          </div>
+          <details class="search-refine" {% if vehicle_type or parking_type or slot_type or sort_by %}open{% endif %}>
+            <summary>Refine &amp; sort</summary>
+            <div class="search-form-grid-refine">
+              <div>
+                <label class="reserve-label" for="vehicle_type">Vehicle</label>
+                <select id="vehicle_type" name="vehicle_type" class="reserve-input">
+                  <option value="" {% if not vehicle_type %}selected{% endif %}>All types</option>
+                  <option value="compact" {% if vehicle_type == "compact" %}selected{% endif %}>Compact</option>
+                  <option value="sedan" {% if vehicle_type == "sedan" %}selected{% endif %}>Sedan</option>
+                  <option value="suv" {% if vehicle_type == "suv" %}selected{% endif %}>SUV</option>
+                  <option value="truck" {% if vehicle_type == "truck" %}selected{% endif %}>Truck</option>
+                </select>
+              </div>
+              <div>
+                <label class="reserve-label" for="parking_type">Parking type</label>
+                <select id="parking_type" name="parking_type" class="reserve-input">
+                  <option value="">All</option>
+                  <option value="Covered Parking" {{ 'selected="selected"' if parking_type == 'Covered Parking' else '' }}>
+                    Covered Parking
+                  </option>
+                  <option value="Multi-Level Garage" {{ 'selected="selected"' if parking_type == 'Multi-Level Garage' else '' }}>
+                    Multi-Level Garage
+                  </option>
+                  <option value="Open Parking Lot" {{ 'selected="selected"' if parking_type == 'Open Parking Lot' else '' }}>
+                    Open Parking Lot
+                  </option>
+                </select>
+              </div>
+              <div>
+                <label class="reserve-label" for="slot_type">Slot type</label>
+                <select id="slot_type" name="slot_type" class="reserve-input">
+                  <option value="">All</option>
+                  <option value="standard" {{ 'selected="selected"' if slot_type == 'standard' else '' }}>
+                    Standard
+                  </option>
+                  <option value="ev" {{ 'selected="selected"' if slot_type == 'ev' else '' }}>
+                    EV
+                  </option>
+                  <option value="accessible" {{ 'selected="selected"' if slot_type == 'accessible' else '' }}>
+                    Accessible
+                  </option>
+                </select>
+              </div>
+              <div>
+                <label class="reserve-label" for="sort_by">Sort</label>
+                <select id="sort_by" name="sort_by" class="reserve-input">
+                  <option value="">Default</option>
+                  <option value="price_asc" {{ 'selected="selected"' if sort_by == 'price_asc' else '' }}>
+                    Price: Low to High
+                  </option>
+                  <option value="price_desc" {{ 'selected="selected"' if sort_by == 'price_desc' else '' }}>
+                    Price: High to Low
+                  </option>
+                  <option value="available_desc" {{ 'selected="selected"' if sort_by == 'available_desc' else '' }}>
+                    Most Available
+                  </option>
+                </select>
+              </div>
+            </div>
+          </details>
 
-          <div>
-            <label class="reserve-label" for="end_date">End Date</label>
-            <input
-              type="date"
-              id="end_date"
-              name="end_date"
-              class="reserve-input"
-              value="{{ end_date }}"
-            >
-          </div>
-
-          <div>
-            <label class="reserve-label" for="end_time_only">End Time</label>
-            <select id="end_time_only" name="end_time_only" class="reserve-input">
-              <option value="">Select time</option>
-              {% for opt in time_options %}
-                <option value="{{ opt.value }}" {% if end_time_only == opt.value %}selected{% endif %}>
-                  {{ opt.label }}
-                </option>
-              {% endfor %}
-            </select>
-          </div>
-        </div>
-
-        <div class="search-form-grid-second">
-          <div>
-            <label class="reserve-label" for="vehicle_type">Vehicle Type</label>
-            <select id="vehicle_type" name="vehicle_type" class="reserve-input">
-              <option value="" {% if not vehicle_type %}selected{% endif %}>All</option>
-              <option value="compact" {% if vehicle_type == "compact" %}selected{% endif %}>Compact</option>
-              <option value="sedan" {% if vehicle_type == "sedan" %}selected{% endif %}>Sedan</option>
-              <option value="suv" {% if vehicle_type == "suv" %}selected{% endif %}>SUV</option>
-              <option value="truck" {% if vehicle_type == "truck" %}selected{% endif %}>Truck</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="reserve-label" for="parking_type">Parking Type</label>
-            <select id="parking_type" name="parking_type" class="reserve-input">
-              <option value="">All</option>
-              <option value="Covered Parking" {{ 'selected="selected"' if parking_type == 'Covered Parking' else '' }}>
-                Covered Parking
-              </option>
-              <option value="Multi-Level Garage" {{ 'selected="selected"' if parking_type == 'Multi-Level Garage' else '' }}>
-                Multi-Level Garage
-              </option>
-              <option value="Open Parking Lot" {{ 'selected="selected"' if parking_type == 'Open Parking Lot' else '' }}>
-                Open Parking Lot
-              </option>
-            </select>
-          </div>
-
-          <div>
-            <label class="reserve-label" for="slot_type">Slot Type</label>
-            <select id="slot_type" name="slot_type" class="reserve-input">
-              <option value="">All</option>
-              <option value="standard" {{ 'selected="selected"' if slot_type == 'standard' else '' }}>
-                Standard
-              </option>
-              <option value="ev" {{ 'selected="selected"' if slot_type == 'ev' else '' }}>
-                EV
-              </option>
-              <option value="accessible" {{ 'selected="selected"' if slot_type == 'accessible' else '' }}>
-                Accessible
-              </option>
-            </select>
-          </div>
-
-          <div>
-            <label class="reserve-label" for="sort_by">Sort By</label>
-            <select id="sort_by" name="sort_by" class="reserve-input">
-              <option value="">Default</option>
-              <option value="price_asc" {{ 'selected="selected"' if sort_by == 'price_asc' else '' }}>
-                Price: Low to High
-              </option>
-              <option value="price_desc" {{ 'selected="selected"' if sort_by == 'price_desc' else '' }}>
-                Price: High to Low
-              </option>
-              <option value="available_desc" {{ 'selected="selected"' if sort_by == 'available_desc' else '' }}>
-                Most Available
-              </option>
-            </select>
-          </div>
-
-          <div class="search-form-actions">
-            <button type="submit" class="btn btn-primary">Search</button>
+          <div class="search-form-submit-row">
+            <button type="submit" class="btn btn-primary search-submit-btn">Search parking</button>
           </div>
         </div>
       </form>
 
       {% if parking_lots %}
-      <div class="lot-grid">
+      <div class="lot-grid lot-grid--search">
         {% for lot in parking_lots %}
-        <div class="lot-card">
+        <div class="lot-card lot-card--compact">
           <div class="lot-card-header">
             <h3>{{ lot.name }}</h3>
             <span class="lot-badge">{{ lot.type }}</span>
@@ -260,11 +259,13 @@
           <div class="lot-stats">
             <div class="lot-stat">
               <span class="lot-stat-label">Price</span>
-              <span class="lot-stat-value">${{ lot.price_per_hour }}/hr</span>
+              <span class="lot-stat-value">${{ '%.2f'|format(lot.price_per_hour) }}/hr</span>
             </div>
             <div class="lot-stat">
               <span class="lot-stat-label">Available</span>
-              <span class="lot-stat-value">{{ lot.available_slots }} slots</span>
+              <span class="lot-stat-value">
+                {{ lot.available_slots }} slot{% if lot.available_slots != 1 %}s{% endif %}
+              </span>
             </div>
           </div>
 

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Support Self-service — SpotOn Smart Parking</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+    <style>
+      .self-service-form {
+        display: grid;
+        gap: 10px;
+      }
+
+      .self-service-form .btn {
+        justify-self: start;
+        margin-top: 4px;
+      }
+    </style>
+  </head>
+  <body class="auth-page auth-page-with-nav">
+    {% if is_logged_in %}
+      {% include "_driver_static_nav.html" %}
+    {% endif %}
+    <div class="auth-card auth-card--narrow">
+      <div class="auth-header">
+        <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
+        <h1>Support Self-service</h1>
+        <p>Guests and users can look up a booking with booking ID.</p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="flash-message {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" class="form-stack self-service-form">
+        <label for="booking_id">Booking ID</label>
+        <input
+          id="booking_id"
+          name="booking_id"
+          type="text"
+          class="reserve-input"
+          placeholder="Enter booking alias (e.g., SP-ABC1239F91)"
+          value="{{ booking_id }}"
+          required
+        />
+        <button type="submit" class="btn btn-primary">Lookup booking</button>
+      </form>
+
+      {% if booking %}
+        <div class="status-panel" style="margin-top: 18px;">
+          <p class="status-ok">Booking found</p>
+          <p class="status-meta"><strong>Booking ID:</strong> {{ booking.booking_alias if booking.booking_alias else booking.id }}</p>
+          <p class="status-meta"><strong>Status:</strong> {{ booking.status }}</p>
+          <p class="status-meta"><strong>Lot:</strong> {{ booking.lot_name }}</p>
+          <p class="status-meta"><strong>Address:</strong> {{ booking.lot_address }}</p>
+          <p class="status-meta"><strong>Slot:</strong> {{ booking.slot_label }}</p>
+          <p class="status-meta"><strong>Start:</strong> {{ booking.formatted_start }} UTC</p>
+          <p class="status-meta"><strong>End:</strong> {{ booking.formatted_end }} UTC</p>
+          <p class="status-meta"><strong>Booked by:</strong> {{ booking.booking_email }}</p>
+        </div>
+      {% endif %}
+
+      <div class="dash-toolbar" style="margin-top: 18px;">
+        <a href="{{ url_for('support_faq') }}" class="btn btn-secondary">FAQ</a>
+        <a href="{{ url_for('home') }}" class="btn btn-secondary">Back to home</a>
+      </div>
+    </div>
+  </body>
+</html>

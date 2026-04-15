@@ -30,6 +30,7 @@
       {% endwith %}
 
       <form action="{{ url_for('signup') }}" method="POST">
+        <input type="hidden" name="next" value="{{ next_url or '' }}" />
         <div class="field">
           <label style="margin-bottom: 8px">I AM A...</label>
           <div class="role-selector">
@@ -107,7 +108,12 @@
       </form>
 
       <div class="auth-links">
-        Already have an account? <a href="{{ url_for('login') }}">Sign in</a>
+        Already have an account?
+        {% if next_url %}
+          <a href="{{ url_for('login', next=next_url) }}">Sign in</a>
+        {% else %}
+          <a href="{{ url_for('login') }}">Sign in</a>
+        {% endif %}
       </div>
     </div>
   </body>

@@ -1,0 +1,136 @@
+================================================================================
+  SPOTON — DEMO VIDEO WALKTHROUGH (STEP-BY-STEP)
+================================================================================
+  Use this as a shot list while recording or as narration cues. Adjust URLs,
+  emails, lot names, and demo payment values to match your environment.
+
+================================================================================
+  BEFORE YOU RECORD
+================================================================================
+
+  [ ] Two browser contexts ready (e.g. Chrome + Firefox, or normal + incognito)
+      — one for DRIVER, one for OPERATOR (avoids constant log-out/in).
+
+  [ ] Test accounts: driver email/password, operator email/password written
+      on a sticky note or title card on screen for viewers.
+
+  [ ] Demo payment: use whatever your app requires (e.g. test card + CVV from
+      the lot checkout screen).
+
+  [ ] Optional: clear driver transaction history if you want a clean ledger
+      for the video.
+
+  [ ] App running locally or deployed; same base URL for all steps.
+
+
+================================================================================
+  PART A — DRIVER FLOW (~5–7 min
+================================================================================
+
+  A1. OPENING (30 sec)
+      1. Open the homepage ("/").
+      2. Pan: logo, hero “Where do you need parking?”, single field + hint.
+      3. Click “Continue to search” OR type a location and submit.
+      4. Optional: show “Skip — show all lots” / nav “Search lots”.
+
+  A2. SEARCH (60–90 sec)
+      1. Go to Search ("/search") if not already there.
+      2. Show “Quick presets” (day + duration).
+      3. Expand “Refine & sort” — vehicle, parking type, slot type, sort.
+      4. Click primary search button (“Search parking”).
+      5. Point at result cards: price, available slot count, “View details”.
+
+  A3. LOT DETAILS & BOOKING (90–120 sec)
+      1. Click “View details” on one lot.
+      2. Show slot list / time window / vehicle selection as your UI shows.
+      3. Open payment / checkout when ready.
+      4. Enter demo payment fields per on-screen instructions.
+      5. Submit reservation.
+      6. Land on receipt (“/receipt/<id>”) — show total, lot, slot, times.
+
+  A4. DRIVER DASHBOARD (2–3 min)
+      1. Open Driver Dashboard ("/dashboard").
+      2. Active reservation card: slot, status, estimated cost.
+      3. “Modify reservation” — change times; save (or cancel if you prefer).
+      4. “Extend” 30 min or 1 hour once.
+      5. Open “Past reservations” if you have history.
+      6. Scroll to “Transaction history” — payment/refund rows, amounts, status.
+      7. Optional: “Clear history” (only if you want to show confirmation).
+      8. Toolbar: Search, Profile, Vehicles, Favorites, Logout (skim).
+
+  A5. DRIVER EXTRAS (60 sec) — pick what you have time for
+      1. Profile: open, edit name/phone, save.
+      2. Vehicles: add a vehicle, show list, delete optional.
+      3. Favorites: favorite a lot from search/favorites page; show “1 slot” text.
+      4. Log out when done with driver segment.
+
+
+================================================================================
+  PART B — OPERATOR FLOW (~3–5 min)
+================================================================================
+
+  B1. SIGN IN AS OPERATOR
+      1. In second browser (or after driver logout), log in as operator.
+      2. Open Operator Dashboard ("/operator-dashboard") or inventory directly.
+
+  B2. INVENTORY ("/operator/inventory")
+      1. Top bar: logged-in line, “Back to Dashboard”, “Logout”.
+      2. “Add a slot”: choose lot, label, slot type, vehicle type, status,
+         active checkbox — submit success message.
+      3. Scroll to “Parking lots & live inventory”.
+      4. On one lot: “Pricing” — set or update base price per hour.
+      5. Add a pricing override (slot type + vehicle type + price) if shown.
+      6. On a slot row: toggle Active; toggle Available / Out of service;
+         edit slot type / vehicle type; save.
+
+  B3. ONE-LINE WRAP
+      Say: “Operators keep labels unique per lot, and confirmed bookings can’t
+      overlap on the same slot — enforced in the product and database.”
+
+
+================================================================================
+  PART C — HOMEPAGE & FOOTER / MISC (~2 min)
+================================================================================
+
+  C1. HOMEPAGE DEMO (logged OUT)
+      1. Open homepage as guest.
+      2. Scroll to “Demo availability”; click a demo spot; open modal.
+      3. Click “Reserve spot” — should send you to login with return to search
+         (or your configured behavior).
+      4. Optional: sign in and confirm you reach search after login.
+
+  C2. FOOTER & STATIC PAGES
+      1. Scroll to footer.
+      2. Click: Legal (privacy / terms / cookies) — any one section.
+      3. Click: System status page.
+      4. Click: Help (FAQ anchor) or Contact (footer anchor) on homepage.
+
+  C3. ADMIN (if you use it)
+      1. Log in as admin.
+      2. Show admin dashboard: working links (e.g. home, search), logout.
+
+
+================================================================================
+  CLOSING (15–20 sec)
+================================================================================
+
+  On screen: Driver search + booking + dashboard; Operator inventory +
+  pricing; homepage + auth + footer.
+
+  Say: “That covers SpotOn for this sprint — driver booking and transparency,
+  operator inventory and pricing, and the supporting pages. Thanks for
+  watching.”
+
+
+================================================================================
+  OPTIONAL SHORT CLIPS (record separately if needed)
+================================================================================
+
+  • Overlap error: two bookings same slot / time (should block or error).
+  • Duplicate slot label on same lot (should fail).
+  • Cancel reservation and show refund line in transactions.
+
+
+================================================================================
+  END OF DOCUMENT
+================================================================================

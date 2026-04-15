@@ -8,14 +8,705 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/styles.css') }}"
     />
+    <style>
+      .dashboard-top-nav {
+        margin: -28px -28px 22px;
+        border-bottom: 1px solid #e7e7e7;
+        border-radius: 24px 24px 0 0;
+        overflow: visible;
+      }
+
+      .dashboard-top-nav-utility {
+        background: #111827;
+        color: #d1d5db;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 12px;
+        border-radius: 24px 24px 0 0;
+      }
+
+      .dashboard-top-nav-links {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .dashboard-top-nav-main {
+        background: #ffffff;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border-bottom: 1px solid #ececec;
+      }
+
+      .dashboard-top-nav-brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .dashboard-top-nav-brand .text-logo {
+        font-size: 1.3rem;
+      }
+
+      .dashboard-top-nav-note {
+        margin: 0;
+        font-size: 0.88rem;
+        color: #6b7280;
+      }
+
+      .toolbar-dropdown {
+        position: relative;
+      }
+
+      .toolbar-dropdown summary {
+        list-style: none;
+      }
+
+      .toolbar-dropdown summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .toolbar-dropdown-panel {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        min-width: 220px;
+        max-width: min(360px, calc(100vw - 32px));
+        padding: 8px;
+        border: 1px solid #e6e6e6;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
+        z-index: 30;
+        display: grid;
+        gap: 4px;
+        opacity: 0;
+        transform: translateY(-8px);
+        pointer-events: none;
+        transition: opacity 0.24s ease, transform 0.24s ease;
+      }
+
+      .toolbar-dropdown[open] .toolbar-dropdown-panel {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+      }
+
+      .toolbar-dropdown-panel .menu-link {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-size: 0.84rem;
+        font-weight: 700;
+        color: #111;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
+      }
+
+      .toolbar-dropdown-panel .menu-link:hover {
+        background: #f5f5f5;
+      }
+
+      .toolbar-dropdown-panel .menu-link.menu-link-danger {
+        color: #b42318;
+      }
+
+      .toolbar-dropdown form {
+        margin: 0;
+      }
+
+      .toolbar-dropdown-panel--right {
+        left: auto;
+        right: 0;
+      }
+
+      .dashboard-user-meta {
+        margin: 0;
+        text-align: left;
+      }
+
+      .dashboard-top-nav .btn {
+        min-height: 40px;
+        padding: 8px 14px;
+        font-size: 0.9rem;
+      }
+
+      .utility-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .dashboard-top-nav .btn.utility-chip {
+        border-color: rgba(156, 163, 175, 0.35);
+        background: rgba(31, 41, 55, 0.95);
+        color: #f9fafb;
+        border-radius: 999px;
+        font-weight: 750;
+        min-width: 52px;
+        width: 52px;
+        padding: 0;
+        justify-content: center;
+      }
+
+      .dashboard-top-nav .btn.utility-chip:hover {
+        background: #111827;
+        border-color: rgba(209, 213, 219, 0.55);
+      }
+
+      .dashboard-top-nav .btn.utility-chip .chip-icon {
+        font-size: 0;
+        opacity: 1;
+      }
+
+      .utility-chip-caret {
+        margin-left: 0;
+        font-size: 0.8rem;
+        line-height: 1;
+        opacity: 0.9;
+        transition: transform 0.2s ease;
+        position: absolute;
+        right: 6px;
+        top: 6px;
+        background: rgba(17, 24, 39, 0.82);
+        border-radius: 999px;
+        width: 14px;
+        height: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.62rem;
+      }
+
+      .toolbar-dropdown[open] .utility-chip-caret {
+        transform: rotate(180deg);
+      }
+
+      .user-menu-panel {
+        width: min(380px, calc(100vw - 18px));
+        min-width: 260px;
+        padding: 8px;
+        border-radius: 16px;
+      }
+
+      .user-menu-head {
+        padding: 4px 6px 8px;
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        align-items: flex-start;
+      }
+
+      .user-menu-name-wrap {
+        min-width: 0;
+      }
+
+      .user-menu-name {
+        margin: 0;
+        font-size: 0.82rem;
+        line-height: 1.05;
+        font-weight: 900;
+        color: #0b0b0b;
+        letter-spacing: -0.02em;
+      }
+
+      .user-menu-id {
+        margin: 6px 0 0;
+        font-size: 0.82rem;
+        color: #6b7280;
+        font-weight: 600;
+      }
+
+      .user-menu-rating {
+        margin-top: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #f2f2f2;
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: #111;
+      }
+
+      .user-menu-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 999px;
+        object-fit: cover;
+        background: #e5e7eb;
+        border: 2px solid #fff;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+        flex-shrink: 0;
+      }
+
+      .user-menu-shortcuts {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin: 8px 0 8px;
+      }
+
+      .user-menu-chip {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 72px;
+        gap: 6px;
+        padding: 8px;
+        border-radius: 12px;
+        background: #f3f3f3;
+        border: 1px solid #e5e7eb;
+        color: #111827;
+        font-size: 0.8rem;
+        font-weight: 800;
+        text-align: center;
+      }
+
+      .user-menu-chip-icon {
+        width: 22px;
+        height: 22px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #111;
+      }
+
+      .user-menu-chip-icon svg {
+        width: 100%;
+        height: 100%;
+        fill: currentColor;
+      }
+
+      .user-menu-list {
+        border-top: 1px solid #ececec;
+        margin-top: 8px;
+      }
+
+      .user-menu-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 8px;
+        border-bottom: 1px solid #efefef;
+        text-decoration: none;
+      }
+
+      .user-menu-row:last-child {
+        border-bottom: 0;
+      }
+
+      .user-menu-row-icon {
+        width: 30px;
+        height: 30px;
+        text-align: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #111;
+      }
+
+      .user-menu-row-icon svg {
+        width: 100%;
+        height: 100%;
+        fill: currentColor;
+      }
+
+      .user-menu-row-main {
+        min-width: 0;
+      }
+
+      .user-menu-row-title {
+        margin: 0;
+        font-size: 0.82rem;
+        line-height: 1.1;
+        font-weight: 800;
+        color: #111;
+      }
+
+      .user-menu-row-caret {
+        margin-left: auto;
+        color: #6b7280;
+        font-size: 1rem;
+        font-weight: 700;
+      }
+
+      .user-menu-signout {
+        margin-top: 10px;
+        width: 100%;
+        border: 1px solid #e5e7eb;
+        background: #f3f3f3;
+        color: #d7263d;
+        font-size: 0.9rem;
+        font-weight: 900;
+        border-radius: 12px;
+        min-height: 44px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .dash-toolbar {
+        margin-top: 10px;
+      }
+
+      .dashboard-page-shell {
+        width: 100%;
+        max-width: none;
+        padding: 24px 24px 20px;
+      }
+
+      .dashboard-ride-shell {
+        margin-top: 12px;
+        display: grid;
+        grid-template-columns: 360px minmax(0, 1fr);
+        gap: 16px;
+        align-items: stretch;
+      }
+
+      .dashboard-ride-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 14px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.05);
+      }
+
+      .dashboard-ride-title {
+        margin: 0 0 10px;
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: #111827;
+      }
+
+      .dashboard-coupon-chip {
+        margin-bottom: 12px;
+        border: 1px solid #bde3ca;
+        background: #e9f8ee;
+        color: #1c6b3f;
+        border-radius: 10px;
+        padding: 8px 10px;
+        font-size: 0.76rem;
+        font-weight: 700;
+        line-height: 1.2;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .dashboard-coupon-chip-text {
+        white-space: nowrap;
+      }
+
+      .dashboard-coupon-help {
+        width: 18px;
+        height: 18px;
+        border-radius: 999px;
+        border: 1px solid #7dc79a;
+        background: #fff;
+        color: #1c6b3f;
+        font-size: 0.72rem;
+        font-weight: 800;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        padding: 0;
+      }
+
+      .coupon-dialog-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.42);
+        z-index: 80;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      }
+
+      .coupon-dialog-backdrop.is-open {
+        display: flex;
+      }
+
+      .coupon-dialog {
+        width: min(560px, 100%);
+        max-height: 86vh;
+        overflow: auto;
+        background: #fff;
+        border-radius: 18px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 22px 46px rgba(0, 0, 0, 0.2);
+      }
+
+      .coupon-dialog-head {
+        position: relative;
+        background: linear-gradient(135deg, #16c172, #1a8f55);
+        color: #fff;
+        padding: 18px 18px 16px;
+        border-radius: 18px 18px 0 0;
+      }
+
+      .coupon-dialog-title {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 900;
+        line-height: 1.15;
+      }
+
+      .coupon-dialog-close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 34px;
+        height: 34px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        background: rgba(255, 255, 255, 0.22);
+        color: #fff;
+        font-size: 1.15rem;
+        cursor: pointer;
+      }
+
+      .coupon-dialog-body {
+        padding: 16px 18px 18px;
+      }
+
+      .coupon-dialog-body h4 {
+        margin: 0 0 8px;
+        font-size: 1rem;
+      }
+
+      .coupon-dialog-body p {
+        margin: 0 0 14px;
+        color: #4b5563;
+      }
+
+      .coupon-dialog-body ul {
+        margin: 0 0 16px;
+        padding-left: 20px;
+        color: #4b5563;
+      }
+
+      .coupon-dialog-book {
+        width: 100%;
+      }
+
+      .dashboard-ride-form {
+        display: grid;
+        gap: 10px;
+      }
+
+      .dashboard-ride-field {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 40px;
+        border: 1px solid #ececec;
+        background: #f7f7f7;
+        border-radius: 10px;
+        padding: 8px 10px;
+        font-size: 0.88rem;
+      }
+
+      .dashboard-ride-field-icon {
+        font-size: 0.95rem;
+        line-height: 1;
+      }
+
+      .dashboard-ride-map {
+        position: relative;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid #e5e7eb;
+        min-height: 300px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.05);
+      }
+
+      .dashboard-ride-map iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        display: block;
+      }
+
+      .dashboard-map-badge {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(17, 24, 39, 0.88);
+        color: #f9fafb;
+        border-radius: 999px;
+        padding: 7px 12px;
+        font-size: 0.78rem;
+        font-weight: 700;
+      }
+
+      @media (max-width: 900px) {
+        .dashboard-top-nav {
+          margin: -28px -16px 18px;
+          border-radius: 24px 24px 0 0;
+        }
+
+        .dashboard-top-nav-utility,
+        .dashboard-top-nav-main {
+          padding: 10px 12px;
+        }
+
+        .dashboard-top-nav-note {
+          display: none;
+        }
+
+        .dashboard-page-shell {
+          width: 100%;
+          padding: 18px 14px;
+        }
+
+        .dashboard-ride-shell {
+          grid-template-columns: 1fr;
+        }
+
+        .dashboard-ride-map {
+          min-height: 280px;
+        }
+
+        .user-menu-panel {
+          width: min(92vw, 620px);
+        }
+
+        .user-menu-shortcuts {
+          grid-template-columns: 1fr;
+        }
+
+        .user-menu-chip {
+          min-height: 90px;
+          flex-direction: row;
+          justify-content: flex-start;
+          padding: 14px 18px;
+        }
+      }
+    </style>
   </head>
-  <body class="auth-page">
-    <div class="auth-card" style="max-width: 1150px;">
+  <body class="auth-page auth-page-with-nav">
+    <div class="auth-card auth-card--wide compact-page dashboard-page-shell">
+      <div class="dashboard-top-nav">
+        <div class="dashboard-top-nav-utility">
+          <div class="dashboard-top-nav-links">
+            <details class="toolbar-dropdown toolbar-dropdown--utility">
+              <summary class="btn utility-chip">
+                <img
+                  src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=140&q=80"
+                  alt="User avatar"
+                  class="user-menu-avatar"
+                  style="width: 34px; height: 34px; border-width: 1px;"
+                />
+                <span class="utility-chip-caret">▾</span>
+              </summary>
+              <div class="toolbar-dropdown-panel toolbar-dropdown-panel--right user-menu-panel">
+                <div class="user-menu-head">
+                  <div class="user-menu-name-wrap">
+                    <p class="user-menu-name">{{ user_email.split('@')[0]|replace('.', ' ')|title if user_email else 'Driver' }}</p>
+                    <p class="user-menu-id">ID: {{ user_email }}</p>
+                  </div>
+                  <img
+                    src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=240&q=80"
+                    alt="Profile avatar"
+                    class="user-menu-avatar"
+                  />
+                </div>
+
+                <div class="user-menu-shortcuts">
+                  <a href="{{ url_for('support_faq') }}" class="user-menu-chip">
+                    <span class="user-menu-chip-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" focusable="false">
+                        <path d="M12 2C6.48 2 2 6.48 2 12c0 1.96.57 3.79 1.55 5.34L2 22l4.85-1.49A9.95 9.95 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2Zm.25 15.5h-1.5V16h1.5v1.5Zm1.66-6.08-.67.68c-.54.55-.74.91-.74 1.9h-1.5v-.38c0-.83.2-1.5.74-2.04l.93-.95c.27-.26.44-.64.44-1.03 0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5H8.66a2.84 2.84 0 0 1 2.84-2.84 2.84 2.84 0 0 1 2.84 2.84c0 .75-.3 1.47-.93 2.08Z"/>
+                      </svg>
+                    </span>
+                    <span>Help</span>
+                  </a>
+                  <a href="{{ url_for('search') }}" class="user-menu-chip">
+                    <span class="user-menu-chip-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" focusable="false">
+                        <path d="M20 7h-4V6a4 4 0 0 0-8 0v1H4a2 2 0 0 0-2 2v10a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V9a2 2 0 0 0-2-2ZM10 6a2 2 0 1 1 4 0v1h-4V6Zm10 13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-6h16v6Zm0-8H4V9h16v2Z"/>
+                      </svg>
+                    </span>
+                    <span>Wallet</span>
+                  </a>
+                  <a href="{{ url_for('transaction_history_page') }}" class="user-menu-chip">
+                    <span class="user-menu-chip-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" focusable="false">
+                        <path d="M17 3H7a2 2 0 0 0-2 2v16l7-3 7 3V5a2 2 0 0 0-2-2Zm0 14.95-5-2.14-5 2.14V5h10v12.95Z"/>
+                      </svg>
+                    </span>
+                    <span>Activity</span>
+                  </a>
+                </div>
+
+                <div class="user-menu-list">
+                  <a href="{{ url_for('manage_account') }}" class="user-menu-row">
+                    <span class="user-menu-row-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" focusable="false">
+                        <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.33 0-8 2.17-8 5v1h16v-1c0-2.83-3.67-5-8-5Z"/>
+                      </svg>
+                    </span>
+                    <div class="user-menu-row-main">
+                      <p class="user-menu-row-title">Manage account</p>
+                    </div> 
+                    <span class="user-menu-row-caret">›</span>
+                  </a>
+
+                  <a href="{{ url_for('support_self_service') }}" class="user-menu-row">
+                    <span class="user-menu-row-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" focusable="false">
+                        <path d="M21.41 11.58 12.42 2.59A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l8.99 8.99a2 2 0 0 0 2.83 0l6.99-6.99a2 2 0 0 0 .01-2.84ZM6.5 8A1.5 1.5 0 1 1 8 6.5 1.5 1.5 0 0 1 6.5 8Z"/>
+                      </svg>
+                    </span>
+                    <div class="user-menu-row-main">
+                      <p class="user-menu-row-title">Promotions</p>
+                    </div>
+                    <span class="user-menu-row-caret">›</span>
+                  </a>
+                </div>
+
+                <form
+                  method="POST"
+                  action="{{ url_for('deactivate_account') }}"
+                  class="form-inline-reset"
+                  onsubmit="return confirm('Are you sure you want to deactivate your account? This will log you out and block future sign-ins until reactivated.');"
+                >
+                  <button type="submit" class="menu-link menu-link-danger">Deactivate account</button>
+                </form>
+                <a href="{{ url_for('logout') }}" class="user-menu-signout">Sign out</a>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <div class="dashboard-top-nav-main">
+          <div class="dashboard-top-nav-brand">
+            <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
+            <p class="dashboard-top-nav-note">Driver portal</p>
+          </div>
+        </div>
+      </div>
+
       <div class="auth-header">
-        <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
         <h1>Welcome</h1>
-        <p>{{ user_email }}</p>
-        <p>You are logged in as {{ user_role }}.</p>
       </div>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
@@ -28,33 +719,76 @@
         {% endif %}
       {% endwith %}
 
-      <div style="margin-top: 20px;">
-        <h3>Driver Dashboard</h3>
-        <p>Manage your reservations below.</p>
+      <div class="dashboard-ride-shell">
+        <div class="dashboard-ride-card">
+          <h2 class="dashboard-ride-title">Get parking</h2>
+          <div class="dashboard-coupon-chip">
+            <span class="dashboard-coupon-chip-text">10% off for first-time user and upto 25% off</span>
+            <button
+              type="button"
+              class="dashboard-coupon-help"
+              id="dashboardCouponHelpBtn"
+              aria-label="View coupon details"
+            >?</button>
+          </div>
+          <form method="GET" action="{{ url_for('search') }}" class="dashboard-ride-form">
+            <input type="hidden" name="quick_day" value="today" />
+            <input type="hidden" name="quick_duration" value="60" />
+            <input type="hidden" name="sort_by" value="available_desc" />
+            <label for="dashboard-location-input" class="reserve-label">Where do you need parking?</label>
+            <input
+              id="dashboard-location-input"
+              name="location"
+              class="reserve-input"
+              placeholder="e.g. Downtown Garage, Jersey City"
+              autocomplete="off"
+            />
+            <button type="submit" class="btn btn-primary">Search</button>
+          </form>
+        </div>
+
+        <div class="dashboard-ride-map">
+          <iframe
+            title="Active reservation map"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            src="https://www.google.com/maps?q={{ active_map_query|urlencode }}&z=13&output=embed"
+          ></iframe>
+          {% if active_map_label %}
+            <div class="dashboard-map-badge">📍 {{ active_map_label }}</div>
+          {% endif %}
+        </div>
       </div>
 
-      <div style="margin-top: 20px; display: flex; gap: 14px; flex-wrap: wrap; align-items: center;">
-        <a href="{{ url_for('search') }}" class="btn btn-secondary active">Search Parking</a>
-        <a href="{{ url_for('profile') }}" class="btn btn-secondary">My Profile</a>
-        <a href="{{ url_for('vehicles') }}" class="btn btn-secondary">My Vehicles</a>
-        <a href="{{ url_for('favorites') }}" class="btn btn-secondary favorite-btn">
-          <span class="favorite-heart">♥</span> Favorite Lots
-        </a>
+      <div class="coupon-dialog-backdrop" id="couponDialogBackdrop" aria-hidden="true">
+        <div class="coupon-dialog" role="dialog" aria-modal="true" aria-labelledby="couponDialogTitle">
+          <div class="coupon-dialog-head">
+            <button type="button" class="coupon-dialog-close" id="couponDialogCloseBtn" aria-label="Close coupon details">×</button>
+            <h3 class="coupon-dialog-title" id="couponDialogTitle">10% off on your First booking</h3>
+          </div>
+          <div class="coupon-dialog-body">
+            <h4>How it works</h4>
+            <p>
+              Eligible drivers can receive 10% off on their first booking. Up to $25 for PACE UNIVERSITY STUDENTS, FACULTY and STAFF. The discount can be applied at checkout when a valid coupon is used.
+            </p>
 
-        <form
-          method="POST"
-          action="{{ url_for('deactivate_account') }}"
-          onsubmit="return confirm('Are you sure you want to deactivate your account? This will log you out and block future sign-ins until reactivated.');"
-          style="margin: 0;"
-        >
-          <button type="submit" class="btn btn-danger">Deactivate Account</button>
-        </form>
+            <h4>Restrictions</h4>
+            <ul>
+              <li>Maximum discount value is capped at $25 per booking.</li>
+              <li>Coupon cannot be combined with another active promotional code.</li>
+              <li>Only valid for bookings completed through the SpotOn dashboard.</li>
+              <li>Offer availability and terms may change at any time.</li>
+            </ul>
 
-        <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+            <a href="{{ url_for('search') }}" class="btn btn-primary coupon-dialog-book">Book now</a>
+          </div>
+        </div>
       </div>
 
-      <div style="margin-top: 34px;">
-        <h2 style="margin: 0 0 18px;">Your Reservations</h2>
+      <div class="dash-section">
+        <div class="dash-section__head">
+          <h2 class="dash-section__title">Your reservations</h2>
+        </div>
 
         {% if active_reservations %}
           <div class="reservation-grid">
@@ -67,6 +801,10 @@
                   <div class="reservation-meta-box">
                     <span class="reservation-label">Slot</span>
                     <span class="reservation-value">{{ reservation.slot_label }}</span>
+                  </div>
+                  <div class="reservation-meta-box">
+                    <span class="reservation-label">Booking ID</span>
+                    <span class="reservation-value">{{ reservation.booking_alias if reservation.booking_alias else reservation.id }}</span>
                   </div>
                   <div class="reservation-meta-box">
                     <span class="reservation-label">Status</span>
@@ -86,20 +824,20 @@
                   </p>
                 </div>
 
-                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; align-items: end;">
+                <div class="reservation-actions">
                   <button
                     type="button"
                     class="btn btn-secondary reservation-action-btn"
                     onclick="toggleModifyForm('{{ reservation.id }}')"
                   >
-                    Modify Reservation
+                    Modify reservation
                   </button>
 
                   <form
                     method="POST"
                     action="{{ url_for('modify_reservation', reservation_id=reservation.id) }}"
                     id="modify-form-{{ reservation.id }}"
-                    style="margin: 0; display: none; grid-template-columns: repeat(4, minmax(120px, 1fr)) auto; gap: 10px; width: 100%; align-items: end;"
+                    class="modify-reservation-form"
                   >
                     <div>
                       <label class="reservation-label" for="modify_start_date_{{ reservation.id }}">Start Date</label>
@@ -136,18 +874,18 @@
                     </div>
                   </form>
 
-                  <form method="POST" action="{{ url_for('extend_reservation', reservation_id=reservation.id) }}" style="margin: 0;">
+                  <form method="POST" action="{{ url_for('extend_reservation', reservation_id=reservation.id) }}" class="form-inline-reset">
                     <input type="hidden" name="extension_minutes" value="30">
                     <button type="submit" class="btn btn-secondary reservation-action-btn">Extend 30 min</button>
                   </form>
 
-                  <form method="POST" action="{{ url_for('extend_reservation', reservation_id=reservation.id) }}" style="margin: 0;">
+                  <form method="POST" action="{{ url_for('extend_reservation', reservation_id=reservation.id) }}" class="form-inline-reset">
                     <input type="hidden" name="extension_minutes" value="60">
                     <button type="submit" class="btn btn-secondary reservation-action-btn">Extend 1 hour</button>
                   </form>
 
-                  <form method="POST" action="{{ url_for('cancel_reservation', reservation_id=reservation.id) }}" style="margin: 0;">
-                    <button type="submit" class="btn btn-secondary reservation-action-btn">Cancel Reservation</button>
+                  <form method="POST" action="{{ url_for('cancel_reservation', reservation_id=reservation.id) }}" class="form-inline-reset">
+                    <button type="submit" class="btn btn-secondary reservation-action-btn">Cancel reservation</button>
                   </form>
                 </div>
               </div>
@@ -161,7 +899,7 @@
                 class="btn btn-secondary"
                 id="show-history-btn"
               >
-                Past Reservations
+                Past reservations
               </button>
             </div>
           {% endif %}
@@ -176,7 +914,7 @@
                   class="btn btn-secondary"
                   id="show-history-btn"
                 >
-                  Past Reservations
+                  Past reservations
                 </button>
               </div>
             {% endif %}
@@ -184,8 +922,10 @@
         {% endif %}
       </div>
 
-      <div id="history-section" style="margin-top: 34px; display: none;">
-        <h2 style="margin: 0 0 18px;">Past Reservations</h2>
+      <div id="history-section" class="dash-section" style="display: none;">
+        <div class="dash-section__head">
+          <h2 class="dash-section__title">Past reservations</h2>
+        </div>
 
         {% if reservation_history %}
           <div class="reservation-grid">
@@ -198,6 +938,10 @@
                   <div class="reservation-meta-box">
                     <span class="reservation-label">Slot</span>
                     <span class="reservation-value">{{ reservation.slot_label }}</span>
+                  </div>
+                  <div class="reservation-meta-box">
+                    <span class="reservation-label">Booking ID</span>
+                    <span class="reservation-value">{{ reservation.booking_alias if reservation.booking_alias else reservation.id }}</span>
                   </div>
                   <div class="reservation-meta-box">
                     <span class="reservation-label">Status</span>
@@ -228,50 +972,12 @@
         {% endif %}
       </div>
 
-      <div style="margin-top: 34px;">
-        <h2 style="margin: 0 0 18px;">Recent Transactions</h2>
-
-        {% if recent_transactions %}
-          <div class="reservation-grid">
-            {% for transaction in recent_transactions %}
-              <div class="reservation-card reservation-card-soft">
-                <h3>{{ transaction.formatted_type }}</h3>
-                <p class="reservation-location">
-                  {% if transaction.lot_name %}
-                    {{ transaction.lot_name }}{% if transaction.slot_label %} • Slot {{ transaction.slot_label }}{% endif %}
-                  {% else %}
-                    Reservation reference available
-                  {% endif %}
-                </p>
-
-                <div class="reservation-meta transaction-meta" style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: stretch;">
-                  <div class="reservation-meta-box" style="width: 100%; min-width: 0; max-width: none;">
-                    <span class="reservation-label">Amount</span>
-                    <span class="reservation-value">{{ transaction.formatted_amount }}</span>
-                  </div>
-                  <div class="reservation-meta-box" style="width: 100%; min-width: 0; max-width: none;">
-                    <span class="reservation-label">Status</span>
-                    <span class="transaction-status-badge transaction-status-{{ transaction.status|lower }}" style="display: inline-flex; width: 100%; justify-content: center;">{{ transaction.status|capitalize }}</span>
-                  </div>
-                </div>
-
-                <div class="reservation-time reservation-time-soft">
-                  <p><strong>Created</strong><br>{{ transaction.formatted_created_at }}</p>
-                </div>
-              </div>
-            {% endfor %}
-          </div>
-        {% else %}
-          <div class="empty-state-card">
-            <p>No transactions recorded yet.</p>
-          </div>
-        {% endif %}
-      </div>
     </div>
 
     <script>
       const showHistoryBtn = document.getElementById("show-history-btn");
       const historySection = document.getElementById("history-section");
+      const toolbarDropdowns = Array.from(document.querySelectorAll(".toolbar-dropdown"));
 
       if (showHistoryBtn && historySection) {
         showHistoryBtn.addEventListener("click", () => {
@@ -283,13 +989,88 @@
       function toggleModifyForm(reservationId) {
         const form = document.getElementById(`modify-form-${reservationId}`);
         if (!form) return;
-
-        if (form.style.display === "none" || form.style.display === "") {
-          form.style.display = "grid";
-        } else {
-          form.style.display = "none";
-        }
+        form.classList.toggle("is-open");
       }
+
+      if (toolbarDropdowns.length) {
+        toolbarDropdowns.forEach((dropdown) => {
+          dropdown.addEventListener("toggle", () => {
+            if (!dropdown.open) return;
+            toolbarDropdowns.forEach((other) => {
+              if (other !== dropdown) {
+                other.open = false;
+              }
+            });
+          });
+        });
+
+        const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+        if (canHover) {
+          const hoverCloseDelayMs = 5;
+          const hoverCloseTimers = new Map();
+
+          const clearCloseTimer = (dropdown) => {
+            const existingTimer = hoverCloseTimers.get(dropdown);
+            if (existingTimer) {
+              window.clearTimeout(existingTimer);
+              hoverCloseTimers.delete(dropdown);
+            }
+          };
+
+          const scheduleClose = (dropdown) => {
+            clearCloseTimer(dropdown);
+            const timerId = window.setTimeout(() => {
+              dropdown.open = false;
+              hoverCloseTimers.delete(dropdown);
+            }, hoverCloseDelayMs);
+            hoverCloseTimers.set(dropdown, timerId);
+          };
+
+          toolbarDropdowns.forEach((dropdown) => {
+            dropdown.addEventListener("mouseenter", () => {
+              clearCloseTimer(dropdown);
+              toolbarDropdowns.forEach((other) => {
+                if (other !== dropdown) {
+                  clearCloseTimer(other);
+                  other.open = false;
+                }
+              });
+              dropdown.open = true;
+            });
+
+            dropdown.addEventListener("mouseleave", () => {
+              scheduleClose(dropdown);
+            });
+          });
+        }
+
+        document.addEventListener("click", (event) => {
+          toolbarDropdowns.forEach((dropdown) => {
+            if (!dropdown.open) return;
+            if (!dropdown.contains(event.target)) {
+              dropdown.open = false;
+            }
+          });
+        });
+      }
+
+      const couponHelpBtn = document.getElementById("dashboardCouponHelpBtn");
+      const couponDialogBackdrop = document.getElementById("couponDialogBackdrop");
+      const couponDialogCloseBtn = document.getElementById("couponDialogCloseBtn");
+
+      function setCouponDialogOpen(isOpen) {
+        if (!couponDialogBackdrop) return;
+        couponDialogBackdrop.classList.toggle("is-open", isOpen);
+        couponDialogBackdrop.setAttribute("aria-hidden", isOpen ? "false" : "true");
+      }
+
+      couponHelpBtn?.addEventListener("click", () => setCouponDialogOpen(true));
+      couponDialogCloseBtn?.addEventListener("click", () => setCouponDialogOpen(false));
+      couponDialogBackdrop?.addEventListener("click", (event) => {
+        if (event.target === couponDialogBackdrop) {
+          setCouponDialogOpen(false);
+        }
+      });
     </script>
   </body>
 </html>

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Contact Support — SpotOn Smart Parking</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+    <style>
+      .support-contact-form {
+        display: grid;
+        gap: 12px;
+      }
+
+      .support-contact-form textarea {
+        min-height: 140px;
+        resize: vertical;
+      }
+    </style>
+  </head>
+  <body class="auth-page auth-page-with-nav">
+    {% if is_logged_in %}
+      {% include "_driver_static_nav.html" %}
+    {% endif %}
+    <div class="auth-card auth-card--narrow">
+      <div class="auth-header">
+        <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
+        <h1>Contact support</h1>
+        <p>Tell us what went wrong and we will help quickly.</p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="flash-message {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" class="form-stack support-contact-form">
+        <label for="full_name">Name</label>
+        <input id="full_name" name="full_name" type="text" class="reserve-input" value="{{ form_data.full_name }}" required />
+
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" class="reserve-input" value="{{ form_data.email }}" required />
+
+        <label for="phone">Phone number</label>
+        <input id="phone" name="phone" type="tel" class="reserve-input" value="{{ form_data.phone }}" />
+
+        <label for="booking_id">Booking ID (optional)</label>
+        <input id="booking_id" name="booking_id" type="text" class="reserve-input" placeholder="e.g., SP-ABC1239F91" value="{{ form_data.booking_id }}" />
+
+        <label for="issue">Issue details</label>
+        <textarea id="issue" name="issue" class="reserve-input" placeholder="Describe your issue..." required>{{ form_data.issue }}</textarea>
+
+        <button type="submit" class="btn btn-primary">Submit support request</button>
+      </form>
+
+      <div class="dash-toolbar" style="margin-top: 18px;">
+        <a href="{{ url_for('support_faq') }}" class="btn btn-secondary">FAQ</a>
+        <a href="{{ url_for('support_self_service') }}" class="btn btn-secondary">Self-service lookup</a>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Legal — SpotOn Smart Parking</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+  </head>
+  <body class="auth-page">
+    <div class="auth-card auth-card--wide">
+      <div class="auth-header">
+        <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
+        <h1>Legal information</h1>
+        <p>Privacy, terms, and cookies for the SpotOn demo.</p>
+      </div>
+
+      <nav class="legal-toc" aria-label="Legal sections">
+        <a href="#privacy">Privacy</a>
+        <a href="#terms">Terms</a>
+        <a href="#cookies">Cookies</a>
+      </nav>
+
+      <section id="privacy" class="legal-section">
+        <h2>Privacy policy</h2>
+        <p>
+          This application is provided as a demonstration. Personal data you enter (such as account
+          details and booking information) is used only to operate the demo features you interact with.
+          Do not enter real payment card numbers outside any explicitly labeled test flow.
+        </p>
+        <p>
+          For questions about data handling in a production deployment, contact your organization’s
+          administrator.
+        </p>
+      </section>
+
+      <section id="terms" class="legal-section">
+        <h2>Terms of service</h2>
+        <p>
+          SpotOn demo software is provided “as is” without warranties of any kind. Availability,
+          pricing, and reservations shown in the demo may not reflect a live commercial service.
+        </p>
+        <p>
+          You agree to use the demo responsibly and not to attempt to disrupt or misuse the service.
+        </p>
+      </section>
+
+      <section id="cookies" class="legal-section">
+        <h2>Cookie policy</h2>
+        <p>
+          The demo uses session cookies to keep you signed in. Map embeds from third-party providers
+          may set their own cookies according to their policies.
+        </p>
+      </section>
+
+      <p class="legal-back">
+        <a href="{{ url_for('home') }}" class="btn btn-secondary">Back to home</a>
+      </p>
+    </div>
+  </body>
+</html>

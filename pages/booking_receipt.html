@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Booking Receipt — SpotOn Smart Parking</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css') }}"
+    />
+    <style>
+      .receipt-shell {
+        max-width: 560px;
+        margin: 0 auto;
+      }
+      .receipt-card {
+        border: 1px solid #e5e5e5;
+        border-radius: 20px;
+        background: #fff;
+        padding: 28px 28px 24px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+      }
+      .receipt-title {
+        margin: 0 0 6px;
+        font-size: 1.4rem;
+      }
+      .receipt-sub {
+        margin: 0 0 22px;
+        color: #666;
+        font-size: 0.95rem;
+      }
+      .receipt-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 0.98rem;
+      }
+      .receipt-row:last-of-type {
+        border-bottom: none;
+      }
+      .receipt-label {
+        color: #666;
+        font-weight: 600;
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .receipt-value {
+        text-align: right;
+        color: #111;
+        font-weight: 600;
+      }
+      .receipt-total {
+        margin-top: 18px;
+        padding-top: 16px;
+        border-top: 2px solid #111;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+      .receipt-total-label {
+        font-size: 1rem;
+        font-weight: 800;
+      }
+      .receipt-total-value {
+        font-size: 1.35rem;
+        font-weight: 800;
+      }
+      .receipt-actions {
+        margin-top: 24px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+    </style>
+  </head>
+  <body class="auth-page">
+    <div class="auth-card receipt-shell">
+      <div class="auth-header">
+        <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
+        <h1 class="receipt-title">Booking receipt</h1>
+        <p class="receipt-sub">Thank you — your parking reservation is confirmed.</p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="flash-message {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <div class="receipt-card">
+        <div class="receipt-row">
+          <div>
+            <div class="receipt-label">Parking lot</div>
+            <div style="margin-top: 4px;">{{ lot.name }}</div>
+            <div style="margin-top: 2px; color: #666; font-weight: 400; font-size: 0.9rem;">{{ lot.address }}</div>
+          </div>
+        </div>
+
+        <div class="receipt-row">
+          <span class="receipt-label">Slot</span>
+          <span class="receipt-value">{{ slot_label }}</span>
+        </div>
+
+        <div class="receipt-row">
+          <span class="receipt-label">Booking ID</span>
+          <span class="receipt-value">{{ booking_alias if booking_alias else reservation_id }}</span>
+        </div>
+
+        <div class="receipt-row">
+          <span class="receipt-label">Start</span>
+          <span class="receipt-value">{{ formatted_start }}</span>
+        </div>
+
+        <div class="receipt-row">
+          <span class="receipt-label">End</span>
+          <span class="receipt-value">{{ formatted_end }}</span>
+        </div>
+
+        <div class="receipt-row">
+          <span class="receipt-label">Subtotal</span>
+          <span class="receipt-value">${{ '%.2f'|format(subtotal_cost) }}</span>
+        </div>
+
+        {% if discount_amount > 0 %}
+          <div class="receipt-row">
+            <span class="receipt-label">
+              {% if applied_promo_code %}
+                Promo ({{ applied_promo_code }})
+              {% else %}
+                Promo Discount
+              {% endif %}
+            </span>
+            <span class="receipt-value">-${{ '%.2f'|format(discount_amount) }}</span>
+          </div>
+        {% endif %}
+
+        <div class="receipt-total">
+          <span class="receipt-total-label">Total</span>
+          <span class="receipt-total-value">${{ '%.2f'|format(total_cost) }}</span>
+        </div>
+
+        <p style="margin: 14px 0 0; font-size: 0.85rem; color: #888;">
+          Times shown in {{ tz_label }}.
+        </p>
+        <p style="margin: 8px 0 0; font-size: 0.85rem; color: #666;">
+          Keep your booking ID for support and self-service lookup.
+        </p>
+      </div>
+
+      <div class="receipt-actions">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Go to Dashboard</a>
+        <a href="{{ url_for('lot_details', lot_id=lot.id, start_time=start_iso, end_time=end_iso, user_timezone=user_timezone) }}" class="btn btn-secondary">Back to lot</a>
+        <a href="{{ url_for('search') }}" class="btn btn-secondary">Search</a>
+      </div>
+    </div>
+  </body>
+</html>

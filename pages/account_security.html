@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Security — SpotOn</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+    <style>
+      .account-shell { width: 100%; max-width: 1040px; background: #fff; border: 1px solid #e8e8e8; border-radius: 16px; overflow: hidden; }
+      .account-layout { display: grid; grid-template-columns: 180px 1fr; min-height: 420px; }
+      .account-sidebar { border-right: 1px solid #ececec; background: #fff; }
+      .account-sidebar a { display: block; padding: 16px 22px; color: #1f2937; font-size: 0.95rem; font-weight: 600; }
+      .account-sidebar a.active { background: #f3f4f6; }
+      .account-main { padding: 28px 24px; }
+      .account-main h1 { margin: 0 0 8px; font-size: 1.55rem; }
+      .account-main p { margin: 0 0 16px; color: #6b7280; }
+      .security-form { max-width: 520px; display: grid; gap: 12px; }
+      .security-form .btn { margin-top: 8px; }
+      @media (max-width: 820px) {
+        .account-layout { grid-template-columns: 1fr; }
+        .account-sidebar { border-right: 0; border-bottom: 1px solid #ececec; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      }
+    </style>
+  </head>
+  <body class="auth-page auth-page-with-nav">
+    {% include "_driver_static_nav.html" %}
+    <div class="account-shell compact-page">
+      <div class="account-layout">
+        <aside class="account-sidebar">
+          <a href="{{ url_for('manage_account') }}">Home</a>
+          <a href="{{ url_for('account_personal_info') }}">Personal info</a>
+          <a class="active" href="{{ url_for('account_security') }}">Security</a>
+          <a href="{{ url_for('favorites') }}">Favorite lots</a>
+        </aside>
+        <main class="account-main">
+          <h1>Security</h1>
+          <p>Change your password and keep your account secure.</p>
+
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              <div class="flash-messages">
+                {% for category, message in messages %}
+                  <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+              </div>
+            {% endif %}
+          {% endwith %}
+
+          <form method="POST" class="security-form">
+            <label for="current_password">Current password</label>
+            <input id="current_password" name="current_password" type="password" required />
+
+            <label for="new_password">New password</label>
+            <input id="new_password" name="new_password" type="password" minlength="6" required />
+
+            <label for="confirm_password">Confirm new password</label>
+            <input id="confirm_password" name="confirm_password" type="password" minlength="6" required />
+
+            <button type="submit" class="btn btn-primary">Update password</button>
+          </form>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

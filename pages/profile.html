@@ -9,8 +9,9 @@
       href="{{ url_for('static', filename='css/styles.css') }}"
     />
   </head>
-  <body class="auth-page">
-    <div class="auth-card" style="max-width: 900px;">
+  <body class="auth-page auth-page-with-nav">
+    {% include "_driver_static_nav.html" %}
+    <div class="auth-card auth-card--narrow compact-page">
       <div class="auth-header">
         <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
         <h1>My Profile</h1>
@@ -28,9 +29,6 @@
       {% endwith %}
 
       <div class="search-topbar">
-        <p style="margin: 0; color: #777;">
-          Logged in as <strong>{{ user_email }}</strong> ({{ user_role }})
-        </p>
         <div class="search-topbar-actions">
           <a href="{{ url_for('dashboard') }}" class="topbar-btn topbar-btn-secondary">Back to Dashboard</a>
           <a href="{{ url_for('logout') }}" class="topbar-btn topbar-btn-primary">Logout</a>
@@ -64,7 +62,7 @@
           </div>
         </div>
 
-        <div style="margin-top: 20px;">
+        <div class="form-submit-row">
           <button type="submit" class="btn btn-primary">Save Profile</button>
         </div>
       </form>
