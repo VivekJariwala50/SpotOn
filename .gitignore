@@ -22,3 +22,7 @@ smart_parking.db
 .DS_Store
 .idea/
 static/.idea/
+
+#Key
+jk.pem
+*.pem
