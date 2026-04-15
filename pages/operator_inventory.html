@@ -8,12 +8,327 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/styles.css') }}"
     />
+    <style>
+      .add-slot-card {
+        margin: 0;
+        padding: 24px;
+        border: 1px solid #e5e5e5;
+        border-radius: 20px;
+        background: #fafafa;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      .add-slot-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin: 24px 0 28px;
+      }
+
+      .add-slot-form {
+        display: grid;
+        gap: 12px;
+      }
+
+      .field-group {
+        display: grid;
+        gap: 6px;
+      }
+
+      .active-row {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 2px;
+        justify-self: start;
+      }
+
+      .active-row input[type="checkbox"] {
+        margin: 0;
+        width: 16px;
+        height: 16px;
+        padding: 0;
+        border: none;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        flex: 0 0 auto;
+      }
+
+      .active-row label {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 400;
+        color: #444;
+        text-transform: none;
+        letter-spacing: normal;
+      }
+
+      .add-slot-submit {
+        margin-top: 6px;
+      }
+
+      .add-slot-sidecard {
+        border: 1px solid #e5e5e5;
+        border-radius: 20px;
+        background: #fff;
+        padding: 24px;
+      }
+
+      .sidecard-title {
+        margin: 0 0 8px;
+        font-size: 1.15rem;
+      }
+
+      .sidecard-subtitle {
+        margin: 0 0 14px;
+        color: #666;
+        line-height: 1.45;
+      }
+
+      .sidecard-section {
+        margin-bottom: 14px;
+      }
+
+      .sidecard-section h3 {
+        margin: 0 0 6px;
+        font-size: 0.92rem;
+        color: #444;
+      }
+
+      .sidecard-section ul {
+        margin: 0;
+        padding-left: 18px;
+        color: #555;
+      }
+
+      .sidecard-section li {
+        margin: 4px 0;
+      }
+
+      .label-chip-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .label-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 9px;
+        border-radius: 999px;
+        background: #f3f3f3;
+        border: 1px solid #e5e5e5;
+        color: #444;
+        font-size: 0.86rem;
+        line-height: 1;
+      }
+
+      .slot-type-reference-list {
+        margin: 0;
+        padding-left: 18px;
+        color: #555;
+      }
+
+      .slot-type-reference-list li {
+        margin: 4px 0;
+      }
+
+      #slot_type {
+        text-transform: uppercase;
+      }
+
+      .sidecard-helper {
+        margin: 0;
+        color: #666;
+      }
+
+      .slot-toggle-section {
+        margin-top: 16px;
+        padding-top: 14px;
+        border-top: 1px solid #ececec;
+      }
+
+      .pricing-section {
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid #ececec;
+      }
+
+      .pricing-title {
+        margin: 0 0 8px;
+        font-size: 0.95rem;
+        color: #444;
+      }
+
+      .pricing-form {
+        display: grid;
+        grid-template-columns: minmax(130px, 1fr) auto;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .pricing-form input,
+      .pricing-override-form input,
+      .pricing-override-form select {
+        font-size: 0.84rem;
+        padding: 7px 9px;
+      }
+
+      .pricing-override-form {
+        margin-top: 8px;
+        display: grid;
+        grid-template-columns: minmax(100px, 1fr) minmax(110px, 1fr);
+        gap: 6px;
+        align-items: center;
+      }
+
+      .pricing-override-form button {
+        grid-column: 1 / -1;
+        justify-self: start;
+      }
+
+      .pricing-override-list {
+        margin: 8px 0 0;
+        display: grid;
+        gap: 5px;
+      }
+
+      .pricing-override-item {
+        font-size: 0.82rem;
+        color: #555;
+        background: #fff;
+        border: 1px solid #ececec;
+        border-radius: 8px;
+        padding: 6px 8px;
+      }
+
+      .slot-toggle-title {
+        margin: 0 0 10px;
+        font-size: 0.95rem;
+        color: #444;
+      }
+
+      .slot-toggle-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .slot-toggle-item {
+        display: grid;
+        gap: 8px;
+        padding: 9px 10px;
+        border: 1px solid #ececec;
+        border-radius: 10px;
+        background: #fafafa;
+      }
+
+      .slot-toggle-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+        flex-wrap: wrap;
+      }
+
+      .slot-toggle-badges {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .slot-toggle-label {
+        font-weight: 650;
+        color: #222;
+      }
+
+      .slot-toggle-pill {
+        font-size: 0.75rem;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        white-space: nowrap;
+      }
+
+      .slot-toggle-pill.active {
+        color: #1f7a38;
+        background: #eaf8ef;
+        border-color: #c8ebd4;
+      }
+
+      .slot-toggle-pill.inactive {
+        color: #8b2e2e;
+        background: #fbeeee;
+        border-color: #f0d3d3;
+      }
+
+      .slot-toggle-pill.available {
+        color: #1f7a38;
+        background: #eaf8ef;
+        border-color: #c8ebd4;
+      }
+
+      .slot-toggle-pill.out-of-service {
+        color: #8b5a18;
+        background: #fff7e8;
+        border-color: #efd7b1;
+      }
+
+      .slot-toggle-form {
+        margin: 0;
+      }
+
+      .slot-toggle-btn {
+        font-size: 0.82rem;
+        padding: 6px 10px;
+        border-radius: 999px;
+        min-height: 36px;
+        box-sizing: border-box;
+      }
+
+      .slot-toggle-actions {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .slot-edit-form {
+        display: grid;
+        grid-template-columns: minmax(110px, 1fr) minmax(130px, 1fr) auto;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .slot-edit-form input,
+      .slot-edit-form select {
+        font-size: 0.82rem;
+        padding: 6px 8px;
+      }
+
+      .slot-edit-form .btn {
+        font-size: 0.8rem;
+        padding: 6px 9px;
+      }
+
+      @media (max-width: 900px) {
+        .add-slot-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .slot-edit-form {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
   </head>
-  <body class="auth-page">
-    <div class="auth-card" style="max-width: 1200px;">
+  <body class="auth-page operator-page">
+    <div class="auth-card auth-card--wide">
       <div class="auth-header">
         <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
-        <h1>Inventory & Availability</h1>
+        <h1>Inventory &amp; Availability</h1>
         <p>Real-time snapshot of lot inventory and slot status.</p>
       </div>
 
@@ -28,7 +343,7 @@
       {% endwith %}
 
       <div class="search-topbar">
-        <p style="margin: 0; color: #777;">
+        <p class="topbar-user-line">
           Logged in as <strong>{{ user_email }}</strong> ({{ user_role }})
         </p>
         <div class="search-topbar-actions">
@@ -41,7 +356,117 @@
         </div>
       </div>
 
+      <div class="add-slot-grid">
+        <div class="add-slot-card">
+          <h2 class="card-section-title">Add a slot</h2>
+          <p class="card-section-lead">
+            Choose the lot, then set a unique label and how the space should behave in search and pricing.
+          </p>
+
+          <form method="POST" action="{{ url_for('add_slot') }}" class="add-slot-form">
+            <div class="field-group">
+              <label for="lot_id">Parking lot</label>
+              <select name="lot_id" id="lot_id" required>
+                <option value="">Select parking lot</option>
+                {% for lot in lots %}
+                  <option value="{{ lot.id }}">{{ lot.name }}</option>
+                {% endfor %}
+              </select>
+              <p class="field-hint">Slots are created under this lot and appear in its inventory below.</p>
+            </div>
+
+            <div class="field-group">
+              <label for="label">Slot label</label>
+              <input type="text" name="label" id="label" placeholder="e.g. A1, B12" required autocomplete="off">
+              <p class="field-hint">Must be unique within the lot. Use the same pattern as existing labels when possible.</p>
+            </div>
+
+            <div class="field-group">
+              <label for="slot_type">Slot type</label>
+              <input type="text" name="slot_type" id="slot_type" value="STANDARD" list="slot-type-suggestions" autocomplete="off">
+              <datalist id="slot-type-suggestions">
+                <option value="STANDARD"></option>
+                <option value="EV"></option>
+                <option value="ACCESSIBLE"></option>
+              </datalist>
+              <p class="field-hint">Used for pricing overrides and filters. Suggestions update when you pick a lot.</p>
+            </div>
+
+            <div class="field-group">
+              <label for="supported_vehicle_type">Supported vehicle type</label>
+              <select name="supported_vehicle_type" id="supported_vehicle_type" required>
+                <option value="">Select vehicle type</option>
+                <option value="compact">Compact</option>
+                <option value="sedan">Sedan</option>
+                <option value="suv">SUV</option>
+                <option value="truck">Truck</option>
+              </select>
+            </div>
+
+            <div class="field-group">
+              <label for="status">Operational status</label>
+              <select name="status" id="status">
+                <option value="AVAILABLE">Available</option>
+                <option value="OUT_OF_SERVICE">Out of Service</option>
+              </select>
+            </div>
+
+            <div class="active-row">
+              <input type="checkbox" name="is_active" id="is_active" checked>
+              <label for="is_active">Active</label>
+            </div>
+
+            <div class="add-slot-submit">
+              <button type="submit" class="btn btn-primary">Add slot</button>
+            </div>
+          </form>
+        </div>
+
+        <aside class="add-slot-sidecard" aria-label="Slot naming and type reference">
+          <h2 class="sidecard-title">Quick reference</h2>
+          <p class="sidecard-subtitle">
+            Naming and types stay consistent across the lot so search, pricing, and maintenance stay predictable.
+          </p>
+
+          <div class="sidecard-section">
+            <h3>Quick tips</h3>
+            <ul>
+              <li>Use a short prefix + number pattern (for example: A1, B12, P3).</li>
+              <li>Avoid spaces and special characters for easier searching.</li>
+              <li>Follow the same pattern already used in the selected lot.</li>
+            </ul>
+          </div>
+
+          <div class="sidecard-section">
+            <h3>Selected lot context</h3>
+            <p id="selected-lot-name" class="sidecard-helper">No parking lot selected yet.</p>
+          </div>
+
+          <div class="sidecard-section">
+            <h3>Existing label examples</h3>
+            <div id="selected-lot-label-chips" class="label-chip-list"></div>
+            <p id="selected-lot-label-helper" class="sidecard-helper">
+              Select a parking lot to see naming examples.
+            </p>
+          </div>
+
+          <div class="sidecard-section">
+            <h3>Slot type suggestions</h3>
+            <ul id="selected-lot-slot-types" class="slot-type-reference-list">
+              <li>STANDARD</li>
+              <li>EV</li>
+              <li>ACCESSIBLE</li>
+            </ul>
+            <p id="selected-lot-slot-types-helper" class="sidecard-helper">
+              Select a parking lot to see slot types already used there.
+            </p>
+          </div>
+        </aside>
+      </div>
+
       {% if lots %}
+        <div id="lot-pricing-section" class="operator-lot-anchor" style="scroll-margin-top: 12px"></div>
+        <h2 class="operator-lot-section-title">Parking lots &amp; live inventory</h2>
         <div class="lot-grid">
           {% for lot in lots %}
             <div class="lot-card">
@@ -73,6 +498,102 @@
                   <span class="lot-stat-value">{{ lot.available_now }}</span>
                 </div>
               </div>
+
+              <div class="pricing-section">
+                <h4 class="pricing-title">Pricing</h4>
+                <form method="POST" action="{{ url_for('update_lot_base_price', lot_id=lot.id) }}" class="pricing-form">
+                  <input
+                    type="number"
+                    name="price_per_hour"
+                    min="0"
+                    step="0.01"
+                    value="{{ '%.2f'|format(lot.price_per_hour or 0) }}"
+                    aria-label="Base price per hour for {{ lot.name }}"
+                    required
+                  >
+                  <button type="submit" class="btn btn-secondary slot-toggle-btn">Update Base</button>
+                </form>
+
+                <form method="POST" action="{{ url_for('update_lot_price_override', lot_id=lot.id) }}" class="pricing-override-form">
+                  <input type="text" name="slot_type" placeholder="slot type or any" aria-label="Slot type override for {{ lot.name }}">
+                  <select name="vehicle_type" aria-label="Vehicle type override for {{ lot.name }}">
+                    <option value="">Any vehicle</option>
+                    <option value="compact">Compact</option>
+                    <option value="sedan">Sedan</option>
+                    <option value="suv">SUV</option>
+                    <option value="truck">Truck</option>
+                  </select>
+                  <input type="number" name="price_per_hour" min="0" step="0.01" placeholder="price / hr" required>
+                  <button type="submit" class="btn btn-secondary slot-toggle-btn">Save Override</button>
+                </form>
+
+                {% if lot.pricing_overrides %}
+                  <div class="pricing-override-list">
+                    {% for override in lot.pricing_overrides %}
+                      <div class="pricing-override-item">
+                        {{ override.slot_type|upper }} / {{ override.vehicle_type|upper }}: ${{ '%.2f'|format(override.price_per_hour) }}/hr
+                      </div>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+
+              <div class="slot-toggle-section">
+                <h4 class="slot-toggle-title">Quick Slot Activation</h4>
+                {% if lot.slots %}
+                  <div class="slot-toggle-list">
+                    {% for slot in lot.slots %}
+                      <div class="slot-toggle-item">
+                        <div class="slot-toggle-meta">
+                          <span class="slot-toggle-label">{{ slot.label }}</span>
+                          <div class="slot-toggle-badges">
+                            <span class="slot-toggle-pill {{ 'active' if slot.is_active else 'inactive' }}">
+                              {{ "Active" if slot.is_active else "Inactive" }}
+                            </span>
+                            <span class="slot-toggle-pill {{ 'available' if slot.status == 'AVAILABLE' else 'out-of-service' }}">
+                              {{ "Available" if slot.status == 'AVAILABLE' else "Out of Service" }}
+                            </span>
+                          </div>
+                        </div>
+                        <div class="slot-toggle-actions">
+                          <form method="POST" action="{{ url_for('toggle_slot_active', slot_id=slot.id) }}" class="slot-toggle-form">
+                            <button type="submit" class="btn btn-secondary slot-toggle-btn">
+                              {{ "Set Inactive" if slot.is_active else "Set Active" }}
+                            </button>
+                          </form>
+                          <form method="POST" action="{{ url_for('toggle_slot_status', slot_id=slot.id) }}" class="slot-toggle-form">
+                            <button type="submit" class="btn btn-secondary slot-toggle-btn">
+                              {{ "Out of Service" if slot.status == 'AVAILABLE' else "Set Available" }}
+                            </button>
+                          </form>
+                        </div>
+                        <form method="POST" action="{{ url_for('update_slot_details', slot_id=slot.id) }}" class="slot-edit-form">
+                          <input
+                            type="text"
+                            name="slot_type"
+                            value="{{ slot.slot_type }}"
+                            aria-label="Slot type for {{ slot.label }}"
+                            required
+                          >
+                          <select
+                            name="supported_vehicle_type"
+                            aria-label="Supported vehicle type for {{ slot.label }}"
+                            required
+                          >
+                            <option value="compact" {% if slot.supported_vehicle_type == 'compact' %}selected{% endif %}>Compact</option>
+                            <option value="sedan" {% if slot.supported_vehicle_type == 'sedan' %}selected{% endif %}>Sedan</option>
+                            <option value="suv" {% if slot.supported_vehicle_type == 'suv' %}selected{% endif %}>SUV</option>
+                            <option value="truck" {% if slot.supported_vehicle_type == 'truck' %}selected{% endif %}>Truck</option>
+                          </select>
+                          <button type="submit" class="btn btn-secondary slot-toggle-btn">Save</button>
+                        </form>
+                      </div>
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  <p class="sidecard-helper">No slots added for this lot yet.</p>
+                {% endif %}
+              </div>
             </div>
           {% endfor %}
         </div>
@@ -82,5 +603,110 @@
         </div>
       {% endif %}
     </div>
+  <script>
+  const lotSelect = document.getElementById("lot_id");
+  const selectedLotName = document.getElementById("selected-lot-name");
+  const selectedLotLabelChips = document.getElementById("selected-lot-label-chips");
+  const selectedLotLabelHelper = document.getElementById("selected-lot-label-helper");
+  const slotTypeSuggestions = document.getElementById("slot-type-suggestions");
+  const selectedLotSlotTypes = document.getElementById("selected-lot-slot-types");
+  const selectedLotSlotTypesHelper = document.getElementById("selected-lot-slot-types-helper");
+  const defaultSlotTypes = ["STANDARD", "EV", "ACCESSIBLE"];
+
+  function renderSidecardLabels(labels) {
+    selectedLotLabelChips.innerHTML = "";
+
+    if (!labels.length) {
+      selectedLotLabelHelper.textContent = "No labels exist for this lot yet. You can define the first naming pattern.";
+      return;
+    }
+
+    labels.slice(0, 10).forEach((label) => {
+      const chip = document.createElement("span");
+      chip.className = "label-chip";
+      chip.textContent = label;
+      selectedLotLabelChips.appendChild(chip);
+    });
+
+    selectedLotLabelHelper.textContent = labels.length > 10
+      ? `Showing 10 of ${labels.length} labels.`
+      : `${labels.length} label${labels.length === 1 ? "" : "s"} found in this lot.`;
+  }
+
+  function renderSlotTypeSuggestions(slotTypes) {
+    const merged = Array.from(new Set([...defaultSlotTypes, ...slotTypes])).filter(Boolean);
+    slotTypeSuggestions.innerHTML = "";
+    merged.forEach((slotType) => {
+      const option = document.createElement("option");
+      option.value = String(slotType).toUpperCase();
+      slotTypeSuggestions.appendChild(option);
+    });
+  }
+
+  function renderSlotTypeReference(slotTypes) {
+    const merged = Array.from(new Set([...defaultSlotTypes, ...slotTypes])).filter(Boolean);
+    selectedLotSlotTypes.innerHTML = "";
+    merged.forEach((slotType) => {
+      const li = document.createElement("li");
+      li.textContent = String(slotType).toUpperCase();
+      selectedLotSlotTypes.appendChild(li);
+    });
+
+    if (slotTypes.length > 0) {
+      selectedLotSlotTypesHelper.textContent = "Includes defaults plus slot types already used in this lot.";
+    } else {
+      selectedLotSlotTypesHelper.textContent = "Showing default slot types. This lot has no custom slot types yet.";
+    }
+  }
+
+  async function loadSlotLabelsForLot(lotId) {
+    if (!lotId) {
+      selectedLotName.textContent = "No parking lot selected yet.";
+      selectedLotLabelChips.innerHTML = "";
+      selectedLotLabelHelper.textContent = "Select a parking lot to see naming examples.";
+      renderSlotTypeSuggestions([]);
+      renderSlotTypeReference([]);
+      return;
+    }
+
+    try {
+      const selectedOption = lotSelect.options[lotSelect.selectedIndex];
+      selectedLotName.textContent = selectedOption ? `Selected lot: ${selectedOption.text}` : "Selected lot";
+
+      const response = await fetch(`/operator/lot-slot-labels/${lotId}`);
+      const data = await response.json();
+      const slotTypes = Array.isArray(data.slot_types) ? data.slot_types : [];
+
+      if (!data.labels || !Array.isArray(data.labels)) {
+        renderSidecardLabels([]);
+        renderSlotTypeSuggestions(slotTypes);
+        renderSlotTypeReference(slotTypes);
+        return;
+      }
+
+      if (data.labels.length === 0) {
+        renderSidecardLabels([]);
+        renderSlotTypeSuggestions(slotTypes);
+        renderSlotTypeReference(slotTypes);
+        return;
+      }
+
+      renderSidecardLabels(data.labels);
+      renderSlotTypeSuggestions(slotTypes);
+      renderSlotTypeReference(slotTypes);
+    } catch (error) {
+      console.error("Could not load slot label suggestions:", error);
+      selectedLotLabelChips.innerHTML = "";
+      selectedLotLabelHelper.textContent = "Could not load lot label examples right now.";
+      renderSlotTypeSuggestions([]);
+      renderSlotTypeReference([]);
+      selectedLotSlotTypesHelper.textContent = "Could not load slot type suggestions right now.";
+    }
+  }
+
+  lotSelect.addEventListener("change", () => {
+    loadSlotLabelsForLot(lotSelect.value);
+  });
+</script>
   </body>
 </html>

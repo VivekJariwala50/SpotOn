@@ -8,9 +8,159 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/styles.css') }}"
     />
+    <style>
+      .lot-details-shell {
+        max-width: 1040px;
+      }
+
+      .lot-details-shell .slot-grid {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 16px;
+        align-items: start;
+      }
+
+      .lot-details-shell .slot-card {
+        padding: 18px;
+        border-radius: 16px;
+        height: auto;
+      }
+
+      .lot-details-shell .slot-title {
+        font-size: 1.75rem;
+      }
+
+      .slot-card.slot-card-unavailable {
+        border-color: #e8e8e8;
+        background: #fcfcfc;
+        min-height: auto;
+        justify-content: flex-start;
+      }
+
+      .slot-card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 6px;
+      }
+
+      .slot-status-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px 9px;
+        border-radius: 999px;
+        font-size: 0.76rem;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+        border: 1px solid transparent;
+        text-transform: uppercase;
+      }
+
+      .slot-status-chip.available {
+        color: #176f3a;
+        background: #e9f8ee;
+        border-color: #cae9d6;
+      }
+
+      .slot-status-chip.inactive {
+        color: #9a3434;
+        background: #fdeeee;
+        border-color: #f4d1d1;
+      }
+
+      .slot-status-chip.reserved {
+        color: #765d14;
+        background: #fff8e7;
+        border-color: #efe0b5;
+      }
+
+      .slot-meta-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px 12px;
+      }
+
+      .slot-meta-item {
+        margin: 0;
+        color: #555;
+      }
+
+      .slot-reserve-form {
+        margin-top: 12px;
+      }
+
+      .slot-unavailable-panel {
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid #f0d7d7;
+        background: #fff7f7;
+      }
+
+      .slot-unavailable-panel .slot-unavailable {
+        display: block;
+        margin: 0;
+      }
+
+      .payment-gate-note {
+        margin: 8px 0 0;
+        font-size: 0.9rem;
+        color: #666;
+      }
+
+      .slot-payment-shell.is-collapsed {
+        display: none;
+      }
+
+      .slot-payment-actions {
+        margin-top: 12px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .slot-action-btn[disabled] {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      .floating-flash-messages {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        z-index: 1200;
+        width: min(440px, calc(100vw - 24px));
+        display: grid;
+        gap: 10px;
+      }
+
+      .floating-flash-messages .flash-message {
+        margin: 0;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
+        animation: flash-slide-in 0.22s ease-out;
+      }
+
+      .floating-flash-messages .flash-message.is-dismissing {
+        opacity: 0;
+        transform: translateY(8px);
+        transition: opacity 0.24s ease, transform 0.24s ease;
+      }
+
+      @keyframes flash-slide-in {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
   </head>
   <body class="auth-page">
-    <div class="auth-card" style="max-width: 1100px;">
+    <div class="auth-card lot-details-shell compact-page">
       <div class="auth-header">
         <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
         <h1>{{ lot.name }}</h1>
@@ -19,7 +169,7 @@
 
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-          <div class="flash-messages">
+          <div class="flash-messages floating-flash-messages" id="floatingFlashMessages" role="status" aria-live="polite">
             {% for category, message in messages %}
               <div class="flash-message {{ category }}">{{ message }}</div>
             {% endfor %}
@@ -28,9 +178,6 @@
       {% endwith %}
 
       <div class="search-topbar">
-        <p style="margin: 0; color: #777;">
-          Logged in as <strong>{{ user_email }}</strong> ({{ user_role }})
-        </p>
         <div class="search-topbar-actions">
           <a href="{{ url_for('search') }}" class="topbar-btn topbar-btn-secondary">
             Back to Search
@@ -89,25 +236,30 @@
 
       <div class="slot-grid">
         {% for slot in slots %}
-          <div class="slot-card">
+          <div class="slot-card {% if not (slot.is_active and slot.is_available_now) %}slot-card-unavailable{% endif %}">
             <div class="slot-card-body">
-              <h3 class="slot-title">Slot {{ slot.label }}</h3>
-              <p class="slot-status">Type: {{ slot.slot_type|upper if slot.slot_type == 'ev' else slot.slot_type|capitalize }}</p>
-              <p class="slot-status">Supported Vehicle: {{ slot.supported_vehicle_type|capitalize if slot.supported_vehicle_type else '—' }}</p>
-              <p class="slot-status">
-                Status:
-                {% if slot.is_active %}
-                  Active
+              <div class="slot-card-top">
+                <h3 class="slot-title">Slot {{ slot.label }}</h3>
+                {% if not slot.is_active %}
+                  <span class="slot-status-chip inactive">Inactive</span>
+                {% elif slot.status != 'AVAILABLE' %}
+                  <span class="slot-status-chip reserved">Out of Service</span>
+                {% elif slot.is_available_now %}
+                  <span class="slot-status-chip available">Available</span>
                 {% else %}
-                  Inactive
+                  <span class="slot-status-chip reserved">Reserved</span>
                 {% endif %}
-              </p>
+              </div>
+              <div class="slot-meta-grid">
+                <p class="slot-meta-item">Type: {{ slot.slot_type|upper if slot.slot_type else '—' }}</p>
+                <p class="slot-meta-item">Supported Vehicle: {{ slot.supported_vehicle_type|upper if slot.supported_vehicle_type else '—' }}</p>
+              </div>
             </div>
 
             {% if user_role == "driver" %}
-              {% if slot.is_active and slot.is_available_now %}
+              {% if slot.is_active and slot.status == 'AVAILABLE' and slot.is_available_now %}
                 {% if vehicles %}
-                <form method="POST" action="{{ url_for('reserve_slot', slot_id=slot.id) }}" class="slot-reserve-form">
+                <form method="POST" action="{{ url_for('reserve_slot', slot_id=slot.id) }}" class="slot-reserve-form" data-slot-id="{{ slot.id }}">
                   <input type="hidden" name="lot_id" value="{{ lot.id }}">
                   <input type="hidden" name="user_timezone" class="user-timezone-input">
 
@@ -115,8 +267,11 @@
                   <select id="vehicle_id_{{ slot.id }}" name="vehicle_id" class="reserve-input" required>
                     <option value="">Choose your vehicle</option>
                     {% for vehicle in vehicles %}
-                      <option value="{{ vehicle.id }}">
-                        {{ vehicle.plate_number }} — {{ vehicle.vehicle_type|capitalize if vehicle.vehicle_type else 'Unknown type' }}
+                      <option
+                        value="{{ vehicle.id }}"
+                        {% if retry_slot_id and retry_slot_id|string == slot.id|string and retry_vehicle_id and retry_vehicle_id|string == vehicle.id|string %}selected{% endif %}
+                      >
+                        {{ vehicle.plate_number }} — {{ vehicle.vehicle_type|upper if vehicle.vehicle_type else 'UNKNOWN' }}
                       </option>
                     {% endfor %}
                   </select>
@@ -160,10 +315,14 @@
     </option>
   {% endfor %}
 </select>
+                  <p class="payment-gate-note">Complete vehicle and time selection to continue to payment.</p>
 
-<div class="slot-payment-shell">
+<div class="slot-payment-shell is-collapsed js-payment-shell">
   <p class="slot-payment-title">Payment Details</p>
   <p class="slot-payment-note">Demo checkout flow for online payment processing.</p>
+  <p class="slot-payment-note" style="margin-top: 4px;">
+    Promos: <strong>SPOTON10</strong> (10% first booking) and <strong>CS691PACE</strong> (25%).
+  </p>
 
   <label for="cardholder_name_{{ slot.id }}" class="reserve-label">Cardholder Name</label>
   <input
@@ -218,21 +377,46 @@
 >
     </div>
   </div>
+
+  <label for="promo_code_{{ slot.id }}" class="reserve-label">Promo Code (optional)</label>
+  <input
+    type="text"
+    id="promo_code_{{ slot.id }}"
+    name="promo_code"
+    class="reserve-input"
+    placeholder="SPOTON10 or CS691PACE"
+    maxlength="20"
+    autocomplete="off"
+    value="{% if retry_slot_id and retry_slot_id|string == slot.id|string %}{{ retry_promo_code }}{% endif %}"
+  >
 </div>
 
-<button type="submit" class="slot-action-btn slot-action-soft">Pay &amp; Reserve</button>
+                  <div class="slot-payment-actions">
+                    <button type="button" class="slot-action-btn slot-action-secondary js-continue-payment" disabled>Continue to Payment</button>
+                    <button type="submit" class="slot-action-btn slot-action-soft js-confirm-payment" style="display: none;">Confirm &amp; Pay</button>
+                  </div>
                 </form>
                 {% else %}
                 <span class="slot-unavailable">Add a vehicle first before making a reservation.</span>
                 {% endif %}
               {% else %}
-                {% if slot.reserved_by_current_user %}
+                {% if not slot.is_active %}
+                  <div class="slot-unavailable-panel">
+                    <span class="slot-unavailable">This slot is inactive and cannot be reserved right now.</span>
+                  </div>
+                {% elif slot.status != 'AVAILABLE' %}
+                  <div class="slot-unavailable-panel">
+                    <span class="slot-unavailable">This slot is marked out of service and cannot be reserved right now.</span>
+                  </div>
+                {% elif slot.reserved_by_current_user %}
                   <div class="slot-reserved-state">
                     <p class="slot-reserved-note">Reserved by you for this selected time range.</p>
                     <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">View Reservation</a>
                   </div>
                 {% else %}
-                  <span class="slot-unavailable">Already reserved for the selected time range</span>
+                  <div class="slot-unavailable-panel">
+                    <span class="slot-unavailable">Already reserved for the selected time range.</span>
+                  </div>
                 {% endif %}
               {% endif %}
             {% else %}
@@ -359,20 +543,88 @@
         }
       }
 
+      function isReservationBasicsComplete(form) {
+        const vehicle = form.querySelector('select[name="vehicle_id"]');
+        const startDate = form.querySelector('input[name="start_date"]');
+        const startTime = form.querySelector('select[name="start_time_only"]');
+        const endDate = form.querySelector('input[name="end_date"]');
+        const endTime = form.querySelector('select[name="end_time_only"]');
+
+        return Boolean(
+          vehicle && vehicle.value &&
+          startDate && startDate.value &&
+          startTime && startTime.value &&
+          endDate && endDate.value &&
+          endTime && endTime.value
+        );
+      }
+
+      function setPaymentExpanded(form, expanded) {
+        const paymentShell = form.querySelector(".js-payment-shell");
+        const continueBtn = form.querySelector(".js-continue-payment");
+        const confirmBtn = form.querySelector(".js-confirm-payment");
+
+        if (!paymentShell || !continueBtn || !confirmBtn) return;
+
+        if (expanded) {
+          paymentShell.classList.remove("is-collapsed");
+          confirmBtn.style.display = "inline-flex";
+          continueBtn.style.display = "none";
+          return;
+        }
+
+        paymentShell.classList.add("is-collapsed");
+        confirmBtn.style.display = "none";
+        continueBtn.style.display = "inline-flex";
+      }
+
+      function refreshPaymentGate(form) {
+        const continueBtn = form.querySelector(".js-continue-payment");
+        if (!continueBtn) return;
+        continueBtn.disabled = !isReservationBasicsComplete(form);
+      }
+
+      const retrySlotId = "{{ retry_slot_id or '' }}";
+      let hasScrolledToRetryForm = false;
+
       document.querySelectorAll(".slot-reserve-form").forEach((form) => {
   const startDate = form.querySelector('input[name="start_date"]');
   const startTime = form.querySelector('select[name="start_time_only"]');
   const endDate = form.querySelector('input[name="end_date"]');
   const endTime = form.querySelector('select[name="end_time_only"]');
+  const vehicleSelect = form.querySelector('select[name="vehicle_id"]');
   const cardNumberInput = form.querySelector(".card-number-input");
   const expiryInput = form.querySelector(".expiry-input");
   const cvvInput = form.querySelector(".cvv-input");
+  const continueBtn = form.querySelector(".js-continue-payment");
 
   syncReservationForm(form);
+  setPaymentExpanded(form, false);
+  refreshPaymentGate(form);
 
-  [startDate, startTime, endDate].forEach((el) => {
+  if (retrySlotId && form.dataset.slotId === retrySlotId) {
+    setPaymentExpanded(form, true);
+    if (!hasScrolledToRetryForm) {
+      form.scrollIntoView({ behavior: "smooth", block: "center" });
+      hasScrolledToRetryForm = true;
+    }
+  }
+
+  [vehicleSelect, startDate, startTime, endDate, endTime].forEach((el) => {
+    if (!el) return;
     el.addEventListener("change", () => syncReservationForm(form));
+    el.addEventListener("change", () => refreshPaymentGate(form));
   });
+
+  if (continueBtn) {
+    continueBtn.addEventListener("click", () => {
+      if (!isReservationBasicsComplete(form)) {
+        refreshPaymentGate(form);
+        return;
+      }
+      setPaymentExpanded(form, true);
+    });
+  }
 
   if (cardNumberInput) {
     cardNumberInput.addEventListener("input", (e) => {
@@ -398,6 +650,17 @@
     });
   }
 });
+
+      const floatingFlashMessages = document.getElementById("floatingFlashMessages");
+      if (floatingFlashMessages) {
+        const flashNodes = Array.from(floatingFlashMessages.querySelectorAll(".flash-message"));
+        flashNodes.forEach((node, index) => {
+          window.setTimeout(() => {
+            node.classList.add("is-dismissing");
+            window.setTimeout(() => node.remove(), 260);
+          }, 10000 + index * 120);
+        });
+      }
     </script>
   </body>
 </html>

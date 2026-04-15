@@ -8,9 +8,64 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/styles.css') }}"
     />
+    <style>
+      .favorites-shell {
+        max-width: 1080px;
+        padding: 26px 26px 22px;
+      }
+
+      .favorites-shell .auth-header {
+        margin-bottom: 18px;
+      }
+
+      .favorites-shell .auth-header h1 {
+        font-size: 2rem;
+        margin: 10px 0 6px;
+      }
+
+      .favorites-shell .search-topbar {
+        margin: 10px 0 20px;
+      }
+
+      .favorites-shell .search-topbar-actions {
+        gap: 10px;
+      }
+
+      .favorites-shell .topbar-btn {
+        min-height: 44px;
+        padding: 10px 16px;
+        min-width: 0;
+      }
+
+      .favorites-shell .lot-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .favorites-shell .lot-actions > a,
+      .favorites-shell .lot-actions > form {
+        width: 100%;
+      }
+
+      .favorites-shell .lot-actions .btn {
+        min-height: 44px;
+      }
+
+      @media (max-width: 720px) {
+        .favorites-shell {
+          padding: 20px 16px;
+        }
+
+        .favorites-shell .lot-actions {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
   </head>
-  <body class="auth-page">
-    <div class="auth-card" style="max-width: 1100px;">
+  <body class="auth-page auth-page-with-nav">
+    {% include "_driver_static_nav.html" %}
+    <div class="auth-card auth-card--wide favorites-shell compact-page">
       <div class="auth-header">
         <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
         <h1>Favorite Locations</h1>
@@ -28,9 +83,6 @@
       {% endwith %}
 
       <div class="search-topbar">
-        <p style="margin: 0; color: #777;">
-          Logged in as <strong>{{ user_email }}</strong> ({{ user_role }})
-        </p>
         <div class="search-topbar-actions">
           <a href="{{ url_for('dashboard') }}" class="topbar-btn topbar-btn-secondary">Back to Dashboard</a>
           <a href="{{ url_for('logout') }}" class="topbar-btn topbar-btn-primary">Logout</a>
@@ -38,9 +90,9 @@
       </div>
 
       {% if favorite_lots %}
-        <div class="lot-grid">
+        <div class="lot-grid lot-grid--search">
           {% for lot in favorite_lots %}
-            <div class="lot-card">
+            <div class="lot-card lot-card--compact">
               <div class="lot-card-header">
                 <h3>{{ lot.name }}</h3>
                 <span class="lot-badge">{{ lot.parking_type }}</span>
@@ -55,7 +107,9 @@
                 </div>
                 <div class="lot-stat">
                   <span class="lot-stat-label">Available</span>
-                  <span class="lot-stat-value">{{ lot.available_slots }} slots</span>
+                  <span class="lot-stat-value">
+                    {{ lot.available_slots }} slot{% if lot.available_slots != 1 %}s{% endif %}
+                  </span>
                 </div>
               </div>
 

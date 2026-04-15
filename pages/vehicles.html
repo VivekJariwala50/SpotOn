@@ -9,8 +9,9 @@
       href="{{ url_for('static', filename='css/styles.css') }}"
     />
   </head>
-  <body class="auth-page">
-    <div class="auth-card" style="max-width: 1100px;">
+  <body class="auth-page auth-page-with-nav">
+    {% include "_driver_static_nav.html" %}
+    <div class="auth-card auth-card--wide compact-page">
       <div class="auth-header">
         <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
         <h1>My Vehicles</h1>
@@ -28,9 +29,6 @@
       {% endwith %}
 
       <div class="search-topbar">
-        <p style="margin: 0; color: #777;">
-          Logged in as <strong>{{ user_email }}</strong> ({{ user_role }})
-        </p>
         <div class="search-topbar-actions">
           <a href="{{ url_for('dashboard') }}" class="topbar-btn topbar-btn-secondary">Back to Dashboard</a>
           <a href="{{ url_for('logout') }}" class="topbar-btn topbar-btn-primary">Logout</a>
@@ -84,7 +82,7 @@
             >
           </div>
 
-          <div>
+          <div class="vehicle-form-span-full">
             <label class="reserve-label" for="vehicle_type">Vehicle Type</label>
             <select id="vehicle_type" name="vehicle_type" class="reserve-input" required>
               <option value="">Select vehicle type</option>
@@ -96,12 +94,15 @@
           </div>
         </div>
 
-        <div style="margin-top: 20px;">
+        <div class="form-submit-row">
           <button type="submit" class="btn btn-primary">Add Vehicle</button>
         </div>
       </form>
 
-      <h2 style="margin: 32px 0 18px;">Saved Vehicles</h2>
+      <div class="dash-section">
+        <div class="dash-section__head">
+          <h2 class="dash-section__title">Saved vehicles</h2>
+        </div>
 
       {% if vehicles %}
         <div class="vehicle-grid">
@@ -113,7 +114,7 @@
               <p><strong>Color:</strong> {{ vehicle.vehicle_color or '—' }}</p>
               <p><strong>Vehicle Type:</strong> {{ vehicle.vehicle_type|capitalize if vehicle.vehicle_type else '—' }}</p>
 
-              <form method="POST" action="{{ url_for('delete_vehicle', vehicle_id=vehicle.id) }}" style="margin-top: 18px;">
+              <form method="POST" action="{{ url_for('delete_vehicle', vehicle_id=vehicle.id) }}" class="form-inline-reset">
                 <button type="submit" class="btn btn-secondary">Delete Vehicle</button>
               </form>
             </div>
@@ -124,6 +125,7 @@
           <p>You have not added any vehicles yet.</p>
         </div>
       {% endif %}
+      </div>
     </div>
   </body>
 </html>

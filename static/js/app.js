@@ -97,6 +97,8 @@ function initFAQ() {
 
   btns.forEach((b) => {
     b.addEventListener("click", () => setActive(b.dataset.faq));
+    b.addEventListener("mouseenter", () => setActive(b.dataset.faq));
+    b.addEventListener("focus", () => setActive(b.dataset.faq));
   });
 
   helpful?.addEventListener("click", () => {
@@ -215,7 +217,13 @@ function renderSpots() {
 
   filtered.forEach((s) => {
     const el = document.createElement("div");
-    el.className = "card";
+    el.className = "card" + (s.available ? "" : " card--unavailable");
+    el.setAttribute("role", "button");
+    el.setAttribute("tabindex", "0");
+    el.setAttribute(
+      "aria-label",
+      `${s.name}, ${s.available ? "available" : "unavailable"}, ${s.pricePerHour} dollars per hour`,
+    );
     el.innerHTML = `
       <div class="card-title">${s.name}</div>
       <div class="card-row">
@@ -227,8 +235,15 @@ function renderSpots() {
         ${s.tags.includes("ev") ? `<span class="badge">EV</span>` : ""}
         ${s.tags.includes("accessible") ? `<span class="badge">ACCESSIBLE</span>` : ""}
       </div>
+      <div class="card-hint">${s.available ? "Click for details & reserve" : "Unavailable in this demo — view details"}</div>
     `;
     el.addEventListener("click", () => openSpot(s.id));
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openSpot(s.id);
+      }
+    });
     elSpotsList.appendChild(el);
   });
 }
@@ -247,14 +262,44 @@ function openSpot(spotId) {
   if (modalStatus)
     modalStatus.textContent = spot.available ? "Available" : "Taken";
 
+  if (reserveBtn) {
+    if (!spot.available) {
+      reserveBtn.disabled = true;
+      reserveBtn.removeAttribute("aria-disabled");
+      reserveBtn.textContent = "Unavailable";
+      reserveBtn.classList.remove("btn-primary");
+      reserveBtn.classList.add("btn-secondary");
+    } else {
+      reserveBtn.disabled = false;
+      reserveBtn.textContent = "Reserve spot";
+      reserveBtn.classList.add("btn-primary");
+      reserveBtn.classList.remove("btn-secondary");
+    }
+  }
+
   // Update map in-site (like Uber flow)
   setGoogleMap(spot.lat, spot.lng, 16);
 
-  if (modalBackdrop) modalBackdrop.classList.remove("hidden");
+  if (modalBackdrop) {
+    modalBackdrop.classList.remove("hidden");
+    modalBackdrop.setAttribute("aria-hidden", "false");
+  }
+  modalClose?.focus();
 }
 
 function closeModal() {
   if (modalBackdrop) modalBackdrop.classList.add("hidden");
+  if (modalBackdrop) modalBackdrop.setAttribute("aria-hidden", "true");
+}
+
+function openFaqKey(key) {
+  const faqSection = document.getElementById("faq");
+  if (faqSection) {
+    faqSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  window.setTimeout(() => {
+    document.querySelector(`.faq-q[data-faq="${key}"]`)?.click();
+  }, 250);
 }
 
 if (modalClose) modalClose.addEventListener("click", closeModal);
@@ -267,10 +312,20 @@ if (modalBackdrop) {
 if (reserveBtn) {
   reserveBtn.addEventListener("click", () => {
     const spot = SPOTS.find((x) => x.id === selectedSpotId);
-    if (!spot) return;
-    spot.available = !spot.available;
-    renderSpots();
-    openSpot(spot.id);
+    if (!spot || !spot.available) return;
+
+    const cfg = typeof window.SPOTON !== "undefined" ? window.SPOTON : null;
+    const searchUrl = cfg && cfg.searchUrl ? cfg.searchUrl : "/search";
+    const loginUrl = cfg && cfg.loginUrl ? cfg.loginUrl : "/login";
+
+    if (cfg && !cfg.isLoggedIn) {
+      const join = loginUrl.includes("?") ? "&" : "?";
+      window.location.href = `${loginUrl}${join}next=${encodeURIComponent(searchUrl)}`;
+      return;
+    }
+
+    // Logged in: real reservations happen from Find Parking / lot details, not this demo list.
+    window.location.href = searchUrl;
   });
 }
 
@@ -282,11 +337,25 @@ if (directionsBtn) {
     // Keep it IN-SITE: just focus map + scroll to it
     setGoogleMap(spot.lat, spot.lng, 16);
     document
-      .getElementById("spots")
+      .getElementById("spots-demo")
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
     closeModal();
   });
 }
+
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  if (modalBackdrop && !modalBackdrop.classList.contains("hidden")) {
+    closeModal();
+  }
+});
+
+document.querySelectorAll(".s-card-details[data-open-faq]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const key = btn.getAttribute("data-open-faq");
+    if (key) openFaqKey(key);
+  });
+});
 
 /* Chips */
 if (elChips) {
@@ -314,3 +383,7 @@ if (elSearch) {
 detectLocation();
 renderSpots();
 initFAQ();
+
+if (modalBackdrop) {
+  modalBackdrop.setAttribute("aria-hidden", "true");
+}

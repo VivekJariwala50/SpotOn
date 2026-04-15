@@ -9,8 +9,8 @@
       href="{{ url_for('static', filename='css/styles.css') }}"
     />
   </head>
-  <body class="auth-page">
-    <div class="auth-card" style="max-width: 1150px;">
+  <body class="auth-page operator-page">
+    <div class="auth-card auth-card--wide">
       <div class="auth-header">
         <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
         <h1>Welcome</h1>
@@ -28,17 +28,17 @@
         {% endif %}
       {% endwith %}
 
-      <div style="margin-top: 20px;">
-        <h3>Operator Dashboard</h3>
-        <p>Monitor parking inventory and real-time slot availability.</p>
+      <div class="dash-intro">
+        <h2 class="dash-intro__title">Operator dashboard</h2>
+        <p>
+          Manage lots, slot availability, and pricing from the inventory view. Use the links below to jump in.
+        </p>
       </div>
 
-      <div style="margin-top: 20px; display: flex; gap: 14px; flex-wrap: wrap;">
-        <a href="{{ url_for('operator_inventory') }}" class="btn btn-primary">View Inventory</a>
-        <a href="#" class="btn btn-secondary">Update Availability</a>
-        <a href="#" class="btn btn-secondary">Manage Reservations</a>
-        <a href="#" class="btn btn-secondary">Pricing</a>
-        <a href="{{ url_for('logout') }}" class="btn btn-primary">Logout</a>
+      <div class="dash-toolbar">
+        <a href="{{ url_for('operator_inventory') }}" class="btn btn-primary">Open inventory</a>
+        <a href="{{ url_for('operator_inventory') }}#lot-pricing-section" class="btn btn-secondary">Pricing &amp; overrides</a>
+        <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
       </div>
     </div>
   </body>
