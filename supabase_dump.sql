@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict iJobh6VNHalo3ILgtDNVzxN8r83s7KQucuZ7Xv9GtONyoyguwSMEaTXx4NOwiSd
+\restrict 3TnqTXe0eOSqVrxhnVK8SsWK7cqr0Z9Jh426nexJrpZrNiVutgv5GArhetTO9J7
 
 -- Dumped from database version 18.3
 -- Dumped by pg_dump version 18.3
@@ -20,13 +20,11 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: public; Type: SCHEMA; Schema: -; Owner: vyomraj
+-- Name: public; Type: SCHEMA; Schema: -; Owner: -
 --
 
 -- *not* creating schema, since initdb creates it
 
-
-ALTER SCHEMA public OWNER TO vyomraj;
 
 --
 -- Name: btree_gist; Type: EXTENSION; Schema: -; Owner: -
@@ -36,7 +34,7 @@ CREATE EXTENSION IF NOT EXISTS btree_gist WITH SCHEMA public;
 
 
 --
--- Name: EXTENSION btree_gist; Type: COMMENT; Schema: -; Owner: 
+-- Name: EXTENSION btree_gist; Type: COMMENT; Schema: -; Owner: -
 --
 
 COMMENT ON EXTENSION btree_gist IS 'support for indexing common datatypes in GiST';
@@ -50,7 +48,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
 
 
 --
--- Name: EXTENSION "uuid-ossp"; Type: COMMENT; Schema: -; Owner: 
+-- Name: EXTENSION "uuid-ossp"; Type: COMMENT; Schema: -; Owner: -
 --
 
 COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UUIDs)';
@@ -61,25 +59,23 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
--- Name: favorite_locations; Type: TABLE; Schema: public; Owner: vyomraj
+-- Name: favorite_locations; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.favorite_locations (
-    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
     parking_lot_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
-ALTER TABLE public.favorite_locations OWNER TO vyomraj;
-
 --
--- Name: parking_lots; Type: TABLE; Schema: public; Owner: vyomraj
+-- Name: parking_lots; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.parking_lots (
-    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
     name text NOT NULL,
     address text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -88,14 +84,12 @@ CREATE TABLE public.parking_lots (
 );
 
 
-ALTER TABLE public.parking_lots OWNER TO vyomraj;
-
 --
--- Name: parking_slots; Type: TABLE; Schema: public; Owner: vyomraj
+-- Name: parking_slots; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.parking_slots (
-    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
     lot_id uuid NOT NULL,
     label text NOT NULL,
     is_active boolean DEFAULT true NOT NULL,
@@ -107,14 +101,12 @@ CREATE TABLE public.parking_slots (
 );
 
 
-ALTER TABLE public.parking_slots OWNER TO vyomraj;
-
 --
--- Name: password_resets; Type: TABLE; Schema: public; Owner: vyomraj
+-- Name: password_resets; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.password_resets (
-    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
     token text NOT NULL,
     expires_at timestamp with time zone NOT NULL,
@@ -123,10 +115,8 @@ CREATE TABLE public.password_resets (
 );
 
 
-ALTER TABLE public.password_resets OWNER TO vyomraj;
-
 --
--- Name: pricing_overrides; Type: TABLE; Schema: public; Owner: vyomraj
+-- Name: pricing_overrides; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.pricing_overrides (
@@ -139,14 +129,12 @@ CREATE TABLE public.pricing_overrides (
 );
 
 
-ALTER TABLE public.pricing_overrides OWNER TO vyomraj;
-
 --
--- Name: profiles; Type: TABLE; Schema: public; Owner: vyomraj
+-- Name: profiles; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.profiles (
-    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
     full_name text,
     phone text,
@@ -155,14 +143,12 @@ CREATE TABLE public.profiles (
 );
 
 
-ALTER TABLE public.profiles OWNER TO vyomraj;
-
 --
--- Name: reservations; Type: TABLE; Schema: public; Owner: vyomraj
+-- Name: reservations; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.reservations (
-    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
     slot_id uuid NOT NULL,
     start_time timestamp with time zone NOT NULL,
@@ -174,10 +160,8 @@ CREATE TABLE public.reservations (
 );
 
 
-ALTER TABLE public.reservations OWNER TO vyomraj;
-
 --
--- Name: transactions; Type: TABLE; Schema: public; Owner: vyomraj
+-- Name: transactions; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.transactions (
@@ -191,10 +175,8 @@ CREATE TABLE public.transactions (
 );
 
 
-ALTER TABLE public.transactions OWNER TO vyomraj;
-
 --
--- Name: transactions_id_seq; Type: SEQUENCE; Schema: public; Owner: vyomraj
+-- Name: transactions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.transactions_id_seq
@@ -206,21 +188,19 @@ CREATE SEQUENCE public.transactions_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.transactions_id_seq OWNER TO vyomraj;
-
 --
--- Name: transactions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: vyomraj
+-- Name: transactions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.transactions_id_seq OWNED BY public.transactions.id;
 
 
 --
--- Name: users; Type: TABLE; Schema: public; Owner: vyomraj
+-- Name: users; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.users (
-    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
     email text NOT NULL,
     password_hash text NOT NULL,
     role text DEFAULT 'driver'::text NOT NULL,
@@ -231,14 +211,12 @@ CREATE TABLE public.users (
 );
 
 
-ALTER TABLE public.users OWNER TO vyomraj;
-
 --
--- Name: vehicles; Type: TABLE; Schema: public; Owner: vyomraj
+-- Name: vehicles; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.vehicles (
-    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
     plate_number text NOT NULL,
     vehicle_make text,
@@ -250,17 +228,15 @@ CREATE TABLE public.vehicles (
 );
 
 
-ALTER TABLE public.vehicles OWNER TO vyomraj;
-
 --
--- Name: transactions id; Type: DEFAULT; Schema: public; Owner: vyomraj
+-- Name: transactions id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.transactions ALTER COLUMN id SET DEFAULT nextval('public.transactions_id_seq'::regclass);
 
 
 --
--- Data for Name: favorite_locations; Type: TABLE DATA; Schema: public; Owner: vyomraj
+-- Data for Name: favorite_locations; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.favorite_locations (id, user_id, parking_lot_id, created_at) FROM stdin;
@@ -271,7 +247,7 @@ e89368ba-bf50-41e7-9e10-49b632160d1d	dc55e18c-7be9-4f47-8733-b1a9cfa334bd	fba396
 
 
 --
--- Data for Name: parking_lots; Type: TABLE DATA; Schema: public; Owner: vyomraj
+-- Data for Name: parking_lots; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.parking_lots (id, name, address, created_at, price_per_hour, parking_type) FROM stdin;
@@ -287,7 +263,7 @@ b475f0db-9849-475f-8b09-4c85527acb90	Newport Covered Parking	125 River Dr S, Jer
 
 
 --
--- Data for Name: parking_slots; Type: TABLE DATA; Schema: public; Owner: vyomraj
+-- Data for Name: parking_slots; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.parking_slots (id, lot_id, label, is_active, created_at, slot_type, supported_vehicle_type, status) FROM stdin;
@@ -328,7 +304,7 @@ c6608ad3-c2b4-4ee5-8dca-cd12bc858dcb	b475f0db-9849-475f-8b09-4c85527acb90	N2	t	2
 
 
 --
--- Data for Name: password_resets; Type: TABLE DATA; Schema: public; Owner: vyomraj
+-- Data for Name: password_resets; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.password_resets (id, user_id, token, expires_at, used, created_at) FROM stdin;
@@ -339,7 +315,7 @@ f36b640c-9a6c-4b09-87f8-acf245d31500	dc55e18c-7be9-4f47-8733-b1a9cfa334bd	PmggO-
 
 
 --
--- Data for Name: pricing_overrides; Type: TABLE DATA; Schema: public; Owner: vyomraj
+-- Data for Name: pricing_overrides; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.pricing_overrides (lot_id, slot_type, vehicle_type, price_per_hour, updated_at) FROM stdin;
@@ -348,7 +324,7 @@ d8512b78-f9eb-4455-968e-ef276c800606	any	any	9.00	2026-04-14 12:50:01.10134-04
 
 
 --
--- Data for Name: profiles; Type: TABLE DATA; Schema: public; Owner: vyomraj
+-- Data for Name: profiles; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.profiles (id, user_id, full_name, phone, created_at, updated_at) FROM stdin;
@@ -358,7 +334,7 @@ COPY public.profiles (id, user_id, full_name, phone, created_at, updated_at) FRO
 
 
 --
--- Data for Name: reservations; Type: TABLE DATA; Schema: public; Owner: vyomraj
+-- Data for Name: reservations; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.reservations (id, user_id, slot_id, start_time, end_time, status, created_at) FROM stdin;
@@ -400,7 +376,7 @@ d854520b-b771-4edf-8cf4-19fbea4affe0	dc55e18c-7be9-4f47-8733-b1a9cfa334bd	32c9e2
 
 
 --
--- Data for Name: transactions; Type: TABLE DATA; Schema: public; Owner: vyomraj
+-- Data for Name: transactions; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.transactions (id, reservation_id, user_id, transaction_type, amount, status, created_at) FROM stdin;
@@ -410,7 +386,7 @@ COPY public.transactions (id, reservation_id, user_id, transaction_type, amount,
 
 
 --
--- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: vyomraj
+-- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.users (id, email, password_hash, role, created_at, full_name, is_active) FROM stdin;
@@ -427,7 +403,7 @@ c15665f5-f285-4709-b7e7-22390b50c20a	vyomoperator@spoton.com	scrypt:32768:8:1$GT
 
 
 --
--- Data for Name: vehicles; Type: TABLE DATA; Schema: public; Owner: vyomraj
+-- Data for Name: vehicles; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.vehicles (id, user_id, plate_number, vehicle_make, vehicle_model, vehicle_color, created_at, vehicle_type) FROM stdin;
@@ -442,14 +418,14 @@ bdf24eda-1a3c-443a-8beb-18bd9c83a2df	0b683cc7-1063-459a-9189-ecf4742f5cda	KHAN00
 
 
 --
--- Name: transactions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: vyomraj
+-- Name: transactions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.transactions_id_seq', 24, true);
 
 
 --
--- Name: favorite_locations favorite_locations_pkey; Type: CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: favorite_locations favorite_locations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.favorite_locations
@@ -457,7 +433,7 @@ ALTER TABLE ONLY public.favorite_locations
 
 
 --
--- Name: favorite_locations favorite_locations_user_id_parking_lot_id_key; Type: CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: favorite_locations favorite_locations_user_id_parking_lot_id_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.favorite_locations
@@ -465,7 +441,7 @@ ALTER TABLE ONLY public.favorite_locations
 
 
 --
--- Name: parking_lots parking_lots_pkey; Type: CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: parking_lots parking_lots_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.parking_lots
@@ -473,7 +449,7 @@ ALTER TABLE ONLY public.parking_lots
 
 
 --
--- Name: parking_slots parking_slots_pkey; Type: CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: parking_slots parking_slots_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.parking_slots
@@ -481,7 +457,7 @@ ALTER TABLE ONLY public.parking_slots
 
 
 --
--- Name: password_resets password_resets_pkey; Type: CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: password_resets password_resets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.password_resets
@@ -489,7 +465,7 @@ ALTER TABLE ONLY public.password_resets
 
 
 --
--- Name: password_resets password_resets_token_key; Type: CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: password_resets password_resets_token_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.password_resets
@@ -497,7 +473,7 @@ ALTER TABLE ONLY public.password_resets
 
 
 --
--- Name: pricing_overrides pricing_overrides_pkey; Type: CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: pricing_overrides pricing_overrides_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.pricing_overrides
@@ -505,7 +481,7 @@ ALTER TABLE ONLY public.pricing_overrides
 
 
 --
--- Name: profiles profiles_pkey; Type: CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: profiles profiles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.profiles
@@ -513,7 +489,7 @@ ALTER TABLE ONLY public.profiles
 
 
 --
--- Name: profiles profiles_user_id_key; Type: CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: profiles profiles_user_id_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.profiles
@@ -521,7 +497,7 @@ ALTER TABLE ONLY public.profiles
 
 
 --
--- Name: reservations reservations_confirmed_no_overlap; Type: CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: reservations reservations_confirmed_no_overlap; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.reservations
@@ -529,7 +505,7 @@ ALTER TABLE ONLY public.reservations
 
 
 --
--- Name: reservations reservations_no_overlap_confirmed; Type: CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: reservations reservations_no_overlap_confirmed; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.reservations
@@ -537,7 +513,7 @@ ALTER TABLE ONLY public.reservations
 
 
 --
--- Name: reservations reservations_pkey; Type: CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: reservations reservations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.reservations
@@ -545,7 +521,7 @@ ALTER TABLE ONLY public.reservations
 
 
 --
--- Name: transactions transactions_pkey; Type: CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: transactions transactions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.transactions
@@ -553,7 +529,7 @@ ALTER TABLE ONLY public.transactions
 
 
 --
--- Name: parking_slots unique_slot_label_per_lot; Type: CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: parking_slots unique_slot_label_per_lot; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.parking_slots
@@ -561,7 +537,7 @@ ALTER TABLE ONLY public.parking_slots
 
 
 --
--- Name: users users_email_key; Type: CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: users users_email_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users
@@ -569,7 +545,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users
@@ -577,7 +553,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: vehicles vehicles_pkey; Type: CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: vehicles vehicles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.vehicles
@@ -585,7 +561,7 @@ ALTER TABLE ONLY public.vehicles
 
 
 --
--- Name: vehicles vehicles_user_id_plate_number_key; Type: CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: vehicles vehicles_user_id_plate_number_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.vehicles
@@ -593,42 +569,42 @@ ALTER TABLE ONLY public.vehicles
 
 
 --
--- Name: idx_parking_slots_lot_id; Type: INDEX; Schema: public; Owner: vyomraj
+-- Name: idx_parking_slots_lot_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_parking_slots_lot_id ON public.parking_slots USING btree (lot_id);
 
 
 --
--- Name: idx_reservations_slot_id; Type: INDEX; Schema: public; Owner: vyomraj
+-- Name: idx_reservations_slot_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_reservations_slot_id ON public.reservations USING btree (slot_id);
 
 
 --
--- Name: idx_reservations_slot_time; Type: INDEX; Schema: public; Owner: vyomraj
+-- Name: idx_reservations_slot_time; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_reservations_slot_time ON public.reservations USING btree (slot_id, start_time, end_time);
 
 
 --
--- Name: idx_reservations_user_id; Type: INDEX; Schema: public; Owner: vyomraj
+-- Name: idx_reservations_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_reservations_user_id ON public.reservations USING btree (user_id);
 
 
 --
--- Name: parking_slots_lot_id_label_normalized_uidx; Type: INDEX; Schema: public; Owner: vyomraj
+-- Name: parking_slots_lot_id_label_normalized_uidx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE UNIQUE INDEX parking_slots_lot_id_label_normalized_uidx ON public.parking_slots USING btree (lot_id, upper(btrim(label)));
 
 
 --
--- Name: favorite_locations favorite_locations_parking_lot_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: favorite_locations favorite_locations_parking_lot_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.favorite_locations
@@ -636,7 +612,7 @@ ALTER TABLE ONLY public.favorite_locations
 
 
 --
--- Name: favorite_locations favorite_locations_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: favorite_locations favorite_locations_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.favorite_locations
@@ -644,7 +620,7 @@ ALTER TABLE ONLY public.favorite_locations
 
 
 --
--- Name: parking_slots parking_slots_lot_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: parking_slots parking_slots_lot_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.parking_slots
@@ -652,7 +628,7 @@ ALTER TABLE ONLY public.parking_slots
 
 
 --
--- Name: password_resets password_resets_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: password_resets password_resets_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.password_resets
@@ -660,7 +636,7 @@ ALTER TABLE ONLY public.password_resets
 
 
 --
--- Name: pricing_overrides pricing_overrides_lot_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: pricing_overrides pricing_overrides_lot_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.pricing_overrides
@@ -668,7 +644,7 @@ ALTER TABLE ONLY public.pricing_overrides
 
 
 --
--- Name: profiles profiles_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: profiles profiles_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.profiles
@@ -676,7 +652,7 @@ ALTER TABLE ONLY public.profiles
 
 
 --
--- Name: reservations reservations_slot_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: reservations reservations_slot_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.reservations
@@ -684,7 +660,7 @@ ALTER TABLE ONLY public.reservations
 
 
 --
--- Name: reservations reservations_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: reservations reservations_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.reservations
@@ -692,7 +668,7 @@ ALTER TABLE ONLY public.reservations
 
 
 --
--- Name: transactions transactions_reservation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: transactions transactions_reservation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.transactions
@@ -700,7 +676,7 @@ ALTER TABLE ONLY public.transactions
 
 
 --
--- Name: transactions transactions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: transactions transactions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.transactions
@@ -708,7 +684,7 @@ ALTER TABLE ONLY public.transactions
 
 
 --
--- Name: vehicles vehicles_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: vyomraj
+-- Name: vehicles vehicles_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.vehicles
@@ -719,5 +695,5 @@ ALTER TABLE ONLY public.vehicles
 -- PostgreSQL database dump complete
 --
 
-\unrestrict iJobh6VNHalo3ILgtDNVzxN8r83s7KQucuZ7Xv9GtONyoyguwSMEaTXx4NOwiSd
+\unrestrict 3TnqTXe0eOSqVrxhnVK8SsWK7cqr0Z9Jh426nexJrpZrNiVutgv5GArhetTO9J7
 

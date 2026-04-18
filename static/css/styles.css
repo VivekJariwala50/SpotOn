@@ -1134,20 +1134,20 @@ textarea:focus {
   display: block;
   min-height: 100vh;
   background: #fcfcfc;
-  padding: 0;
+  padding: 24px 16px;
 }
 
+/* Standalone forms (login, signup, forgot password): centered column.
+   Wider shells override via .auth-card--wide / .auth-card--narrow or page-local styles. */
 .auth-card {
   background: #fff;
-  border-radius: 0;
-  padding: 24px 18px;
+  border-radius: 18px;
+  padding: 28px 24px;
   width: 100%;
-  max-width: none;
-  box-shadow: none;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  border-left: 0;
-  border-right: 0;
+  max-width: min(480px, calc(100vw - 32px));
+  margin: 0 auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--line);
 }
 
 .auth-header {
