@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 
 app = Flask(__name__, template_folder="pages")
-app.secret_key = os.getenv("Zg6V!5B40&%*+:Y6", "dev-secret")
+app.secret_key = os.getenv("SECRET_KEY", "dev-secret")
 app.permanent_session_lifetime = timedelta(minutes=30)
 
 AVAILABLE_SLOT_STATUS = "AVAILABLE"
@@ -75,6 +75,9 @@ def get_db_connection():
     if database_url:
         if database_url.startswith("postgres://"):
             database_url = database_url.replace("postgres://", "postgresql://", 1)
+        # Supabase requires TLS; append sslmode if the URL does not already set it.
+        if "supabase.co" in database_url and "sslmode=" not in database_url:
+            database_url += ("&" if "?" in database_url else "?") + "sslmode=require"
         return psycopg2.connect(database_url)
 
     return psycopg2.connect(
