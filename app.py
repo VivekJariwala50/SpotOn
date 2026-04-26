@@ -47,6 +47,16 @@ PENDING_APPROVAL_STATUS = "PENDING_APPROVAL"
 REJECTED_RESERVATION_STATUS = "REJECTED"
 # Slot-time overlaps treat pending requests like confirmed holds.
 BOOKING_OVERLAP_STATUS_SQL = "('CONFIRMED', 'PENDING_APPROVAL')"
+SUPPORT_TICKET_STATUS_OPEN = "OPEN"
+SUPPORT_TICKET_STATUS_IN_PROGRESS = "IN_PROGRESS"
+SUPPORT_TICKET_STATUS_RESOLVED = "RESOLVED"
+SUPPORT_TICKET_STATUS_CLOSED = "CLOSED"
+SUPPORT_TICKET_STATUSES = {
+    SUPPORT_TICKET_STATUS_OPEN,
+    SUPPORT_TICKET_STATUS_IN_PROGRESS,
+    SUPPORT_TICKET_STATUS_RESOLVED,
+    SUPPORT_TICKET_STATUS_CLOSED,
+}
 
 
 def build_booking_alias(booking_id):
@@ -404,6 +414,89 @@ def ensure_bulk_reservation_schema():
         conn.close()
 
 
+def ensure_support_tickets_schema():
+    """Idempotent support ticket storage for contact + management workflows."""
+    conn = get_db_connection()
+    conn.autocommit = True
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS support_tickets (
+                id UUID PRIMARY KEY,
+                ticket_code VARCHAR(32) NOT NULL UNIQUE,
+                user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+                reservation_id UUID REFERENCES reservations(id) ON DELETE SET NULL,
+                full_name VARCHAR(120) NOT NULL,
+                email VARCHAR(255) NOT NULL,
+                phone VARCHAR(40),
+                booking_reference VARCHAR(64),
+                issue TEXT NOT NULL,
+                status VARCHAR(24) NOT NULL DEFAULT 'OPEN',
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            )
+            """
+        )
+        cur.execute(
+            """
+            ALTER TABLE support_tickets
+            DROP CONSTRAINT IF EXISTS support_tickets_status_check
+            """
+        )
+        cur.execute(
+            """
+            ALTER TABLE support_tickets
+            ADD CONSTRAINT support_tickets_status_check
+            CHECK (status IN ('OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'))
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_support_tickets_status_created
+            ON support_tickets (status, created_at DESC)
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_support_tickets_email_created
+            ON support_tickets (email, created_at DESC)
+            """
+        )
+    except psycopg2.Error as exc:
+        print("ensure_support_tickets_schema:", exc)
+    finally:
+        cur.close()
+        conn.close()
+
+
+def _resolve_reservation_id_from_booking_reference(cur, booking_reference):
+    raw = (booking_reference or "").strip()
+    if not raw:
+        return None
+
+    normalized_lookup = "".join(ch for ch in raw.upper() if ch.isalnum())
+    alias_body = normalized_lookup[2:] if normalized_lookup.startswith("SP") else normalized_lookup
+    lookup_alias = f"SP-{alias_body}" if alias_body else ""
+
+    cur.execute(
+        """
+        SELECT r.id
+        FROM reservations r
+        WHERE CAST(r.id AS TEXT) = %s
+           OR UPPER(
+                'SP-'
+                || SUBSTRING(REPLACE(CAST(r.id AS TEXT), '-', '') FROM 1 FOR 6)
+                || SUBSTRING(REPLACE(CAST(r.id AS TEXT), '-', '') FROM 29 FOR 4)
+           ) = %s
+        LIMIT 1
+        """,
+        (raw, lookup_alias),
+    )
+    row = cur.fetchone()
+    return row["id"] if row else None
+
+
 def enrich_reservation_rows_bulk_metadata(rows):
     """Adds bulk_peer_count and bulk_peer_slots_display for grouped UI."""
     if not rows:
@@ -437,6 +530,7 @@ def _ensure_db_integrity_once():
     ensure_db_integrity_constraints()
     ensure_reservation_approval_schema()
     ensure_bulk_reservation_schema()
+    ensure_support_tickets_schema()
     app.config["_db_integrity_constraints_ready"] = True
 
 
@@ -1309,23 +1403,460 @@ def modify_reservation(reservation_id):
         cur.close()
         conn.close()
 
+def fetch_capacity_utilization_metrics(cur, days=7, lot_id=None):
+    """
+    Capacity/utilization snapshot for dashboard widgets.
+    - Capacity baseline: all slots.
+    - Utilization denominator: active + available slots (bookable inventory).
+    """
+    window_days = max(int(days or 7), 1)
+    lot_filter = str(lot_id or "").strip()
+
+    cur.execute(
+        """
+        WITH date_window AS (
+            SELECT
+                date_trunc('day', now()) - (%s::int - 1) * interval '1 day' AS window_start,
+                date_trunc('day', now()) + interval '1 day' AS window_end
+        ),
+        lot_rollup AS (
+            SELECT
+                pl.id AS lot_id,
+                pl.name AS lot_name,
+                COUNT(ps.id) AS total_slots,
+                COUNT(ps.id) FILTER (
+                    WHERE ps.is_active = TRUE
+                      AND ps.status = 'AVAILABLE'
+                ) AS active_bookable_slots,
+                COUNT(ps.id) FILTER (
+                    WHERE ps.is_active = FALSE
+                       OR ps.status <> 'AVAILABLE'
+                ) AS unavailable_slots,
+                COUNT(ps.id) FILTER (
+                    WHERE ps.is_active = TRUE
+                      AND ps.status = 'AVAILABLE'
+                      AND EXISTS (
+                          SELECT 1
+                          FROM reservations r
+                          WHERE r.slot_id = ps.id
+                            AND r.status IN ('CONFIRMED', 'PENDING_APPROVAL')
+                            AND now() >= r.start_time
+                            AND now() < r.end_time
+                      )
+                ) AS occupied_now,
+                COUNT(ps.id) FILTER (
+                    WHERE ps.is_active = TRUE
+                      AND ps.status = 'AVAILABLE'
+                      AND EXISTS (
+                          SELECT 1
+                          FROM reservations r
+                          CROSS JOIN date_window dw
+                          WHERE r.slot_id = ps.id
+                            AND r.status IN ('CONFIRMED', 'PENDING_APPROVAL')
+                            AND tstzrange(r.start_time, r.end_time, '[)') &&
+                                tstzrange(dw.window_start, dw.window_end, '[)')
+                      )
+                ) AS occupied_in_window
+            FROM parking_lots pl
+            LEFT JOIN parking_slots ps ON ps.lot_id = pl.id
+            WHERE (%s::text = '' OR pl.id::text = %s::text)
+            GROUP BY pl.id, pl.name
+        )
+        SELECT
+            lot_id,
+            lot_name,
+            total_slots,
+            active_bookable_slots,
+            unavailable_slots,
+            occupied_now,
+            occupied_in_window,
+            GREATEST(active_bookable_slots - occupied_now, 0) AS available_now,
+            CASE
+                WHEN active_bookable_slots > 0
+                THEN ROUND((occupied_now::numeric / active_bookable_slots::numeric) * 100, 1)
+                ELSE 0
+            END AS utilization_pct,
+            CASE
+                WHEN active_bookable_slots > 0
+                THEN ROUND((occupied_in_window::numeric / active_bookable_slots::numeric) * 100, 1)
+                ELSE 0
+            END AS utilization_window_pct
+        FROM lot_rollup
+        ORDER BY lot_name ASC
+        """,
+        (window_days, lot_filter, lot_filter),
+    )
+    lot_rows = cur.fetchall()
+
+    summary = {
+        "lot_count": len(lot_rows),
+        "window_days": window_days,
+        "total_slots": sum(int(row.get("total_slots") or 0) for row in lot_rows),
+        "active_bookable_slots": sum(int(row.get("active_bookable_slots") or 0) for row in lot_rows),
+        "unavailable_slots": sum(int(row.get("unavailable_slots") or 0) for row in lot_rows),
+        "occupied_now": sum(int(row.get("occupied_now") or 0) for row in lot_rows),
+        "occupied_in_window": sum(int(row.get("occupied_in_window") or 0) for row in lot_rows),
+        "available_now": sum(int(row.get("available_now") or 0) for row in lot_rows),
+    }
+    if summary["active_bookable_slots"] > 0:
+        summary["utilization_pct"] = round(
+            (summary["occupied_now"] / summary["active_bookable_slots"]) * 100,
+            1,
+        )
+    else:
+        summary["utilization_pct"] = 0.0
+    if summary["active_bookable_slots"] > 0:
+        summary["utilization_window_pct"] = round(
+            (summary["occupied_in_window"] / summary["active_bookable_slots"]) * 100,
+            1,
+        )
+    else:
+        summary["utilization_window_pct"] = 0.0
+
+    return summary, lot_rows
+
+
+def fetch_revenue_demand_trends(cur, days=7, lot_id=None):
+    """
+    Revenue + demand trends for the recent N-day window.
+    Demand uses reservation starts; revenue uses transaction ledger events.
+    """
+    window_days = max(int(days or 7), 1)
+    lot_filter = str(lot_id or "").strip()
+
+    cur.execute(
+        """
+        SELECT
+            date_trunc('day', r.start_time)::date AS day_bucket,
+            COUNT(*) AS bookings
+        FROM reservations r
+        JOIN parking_slots ps ON ps.id = r.slot_id
+        WHERE r.start_time >= date_trunc('day', now()) - (%s::int - 1) * interval '1 day'
+          AND r.start_time < date_trunc('day', now()) + interval '1 day'
+          AND (%s::text = '' OR ps.lot_id::text = %s::text)
+        GROUP BY day_bucket
+        ORDER BY day_bucket ASC
+        """,
+        (window_days, lot_filter, lot_filter),
+    )
+    reservation_rows = cur.fetchall()
+
+    cur.execute(
+        """
+        SELECT
+            date_trunc('day', t.created_at)::date AS day_bucket,
+            SUM(
+                CASE
+                    WHEN COALESCE(UPPER(t.transaction_type), '') = 'REFUND' THEN 0
+                    ELSE COALESCE(t.amount, 0)
+                END
+            ) AS gross_revenue,
+            SUM(
+                CASE
+                    WHEN COALESCE(UPPER(t.transaction_type), '') = 'REFUND' THEN COALESCE(t.amount, 0)
+                    ELSE 0
+                END
+            ) AS refunds,
+            COUNT(*) FILTER (
+                WHERE COALESCE(UPPER(t.transaction_type), '') <> 'REFUND'
+            ) AS successful_charges
+        FROM transactions t
+        LEFT JOIN reservations r ON r.id = t.reservation_id
+        LEFT JOIN parking_slots ps ON ps.id = r.slot_id
+        WHERE t.created_at >= date_trunc('day', now()) - (%s::int - 1) * interval '1 day'
+          AND t.created_at < date_trunc('day', now()) + interval '1 day'
+          AND COALESCE(UPPER(t.status), 'SUCCESS') = 'SUCCESS'
+          AND (%s::text = '' OR ps.lot_id::text = %s::text)
+        GROUP BY day_bucket
+        ORDER BY day_bucket ASC
+        """,
+        (window_days, lot_filter, lot_filter),
+    )
+    transaction_rows = cur.fetchall()
+
+    reservations_by_day = {
+        row["day_bucket"]: int(row.get("bookings") or 0)
+        for row in reservation_rows
+    }
+    transactions_by_day = {
+        row["day_bucket"]: row
+        for row in transaction_rows
+    }
+
+    today_date = datetime.now(timezone.utc).date()
+    trend_rows = []
+    for i in range(window_days - 1, -1, -1):
+        day_bucket = today_date - timedelta(days=i)
+        tx_row = transactions_by_day.get(day_bucket) or {}
+
+        gross_revenue = round(float(tx_row.get("gross_revenue") or 0), 2)
+        refunds = round(float(tx_row.get("refunds") or 0), 2)
+        net_revenue = round(gross_revenue - refunds, 2)
+
+        trend_rows.append(
+            {
+                "day_bucket": day_bucket,
+                "day_label": day_bucket.strftime("%b %d"),
+                "bookings": reservations_by_day.get(day_bucket, 0),
+                "successful_charges": int(tx_row.get("successful_charges") or 0),
+                "gross_revenue": gross_revenue,
+                "refunds": refunds,
+                "net_revenue": net_revenue,
+            }
+        )
+
+    summary = {
+        "window_days": window_days,
+        "total_bookings": sum(row["bookings"] for row in trend_rows),
+        "total_successful_charges": sum(row["successful_charges"] for row in trend_rows),
+        "gross_revenue": round(sum(row["gross_revenue"] for row in trend_rows), 2),
+        "refunds": round(sum(row["refunds"] for row in trend_rows), 2),
+        "net_revenue": round(sum(row["net_revenue"] for row in trend_rows), 2),
+    }
+    return summary, trend_rows
+
+
+def fetch_peak_analysis(cur, days=7, lot_id=None):
+    """
+    Peak demand + peak revenue analysis over a recent time window.
+    - Demand peak: booking counts by reservation start hour.
+    - Revenue peak: successful transaction totals by transaction hour/day.
+    """
+    window_days = max(int(days or 7), 1)
+    lot_filter = str(lot_id or "").strip()
+
+    cur.execute(
+        """
+        SELECT
+            EXTRACT(HOUR FROM r.start_time)::int AS hour_of_day,
+            COUNT(*) AS bookings
+        FROM reservations r
+        JOIN parking_slots ps ON ps.id = r.slot_id
+        WHERE r.start_time >= now() - (%s::int * interval '1 day')
+          AND r.start_time < now()
+          AND (%s::text = '' OR ps.lot_id::text = %s::text)
+        GROUP BY hour_of_day
+        ORDER BY bookings DESC, hour_of_day ASC
+        LIMIT 3
+        """,
+        (window_days, lot_filter, lot_filter),
+    )
+    demand_rows = cur.fetchall()
+
+    def _hour_label(hour_value):
+        return datetime.strptime(f"{int(hour_value):02d}:00", "%H:%M").strftime("%I:00 %p").lstrip("0")
+
+    peak_hours = [
+        {
+            "hour_of_day": int(row.get("hour_of_day") or 0),
+            "hour_label": _hour_label(row.get("hour_of_day") or 0),
+            "bookings": int(row.get("bookings") or 0),
+        }
+        for row in demand_rows
+    ]
+
+    cur.execute(
+        """
+        SELECT
+            date_trunc('hour', t.created_at) AS hour_bucket,
+            SUM(COALESCE(t.amount, 0)) AS hour_revenue
+        FROM transactions t
+        LEFT JOIN reservations r ON r.id = t.reservation_id
+        LEFT JOIN parking_slots ps ON ps.id = r.slot_id
+        WHERE t.created_at >= now() - (%s::int * interval '1 day')
+          AND t.created_at < now()
+          AND COALESCE(UPPER(t.status), 'SUCCESS') = 'SUCCESS'
+          AND COALESCE(UPPER(t.transaction_type), '') <> 'REFUND'
+          AND (%s::text = '' OR ps.lot_id::text = %s::text)
+        GROUP BY hour_bucket
+        ORDER BY hour_revenue DESC, hour_bucket ASC
+        LIMIT 1
+        """,
+        (window_days, lot_filter, lot_filter),
+    )
+    peak_hour_revenue_row = cur.fetchone() or {}
+
+    cur.execute(
+        """
+        SELECT
+            date_trunc('day', t.created_at)::date AS day_bucket,
+            SUM(COALESCE(t.amount, 0)) AS day_revenue
+        FROM transactions t
+        LEFT JOIN reservations r ON r.id = t.reservation_id
+        LEFT JOIN parking_slots ps ON ps.id = r.slot_id
+        WHERE t.created_at >= date_trunc('day', now()) - (%s::int - 1) * interval '1 day'
+          AND t.created_at < date_trunc('day', now()) + interval '1 day'
+          AND COALESCE(UPPER(t.status), 'SUCCESS') = 'SUCCESS'
+          AND COALESCE(UPPER(t.transaction_type), '') <> 'REFUND'
+          AND (%s::text = '' OR ps.lot_id::text = %s::text)
+        GROUP BY day_bucket
+        ORDER BY day_revenue DESC, day_bucket ASC
+        LIMIT 1
+        """,
+        (window_days, lot_filter, lot_filter),
+    )
+    peak_day_revenue_row = cur.fetchone() or {}
+
+    peak_hour_bucket = peak_hour_revenue_row.get("hour_bucket")
+    peak_day_bucket = peak_day_revenue_row.get("day_bucket")
+
+    summary = {
+        "window_days": window_days,
+        "peak_booking_hour_label": _hour_label(peak_hours[0]["hour_of_day"]) if peak_hours else "—",
+        "peak_booking_hour_count": peak_hours[0]["bookings"] if peak_hours else 0,
+        "peak_revenue_hour_label": (
+            peak_hour_bucket.strftime("%b %d, %I:%M %p").replace(" 0", " ")
+            if peak_hour_bucket
+            else "—"
+        ),
+        "peak_revenue_hour_amount": round(float(peak_hour_revenue_row.get("hour_revenue") or 0), 2),
+        "peak_revenue_day_label": (
+            peak_day_bucket.strftime("%b %d, %Y")
+            if peak_day_bucket
+            else "—"
+        ),
+        "peak_revenue_day_amount": round(float(peak_day_revenue_row.get("day_revenue") or 0), 2),
+    }
+    return summary, peak_hours
+
+
+def parse_analytics_filters(req):
+    range_key = (req.args.get("range") or "7d").strip().lower()
+    if range_key not in {"today", "7d", "30d"}:
+        range_key = "7d"
+    range_days_map = {"today": 1, "7d": 7, "30d": 30}
+    return {
+        "range_key": range_key,
+        "range_days": range_days_map[range_key],
+        "lot_id": (req.args.get("lot_id") or "").strip(),
+    }
+
+
+def fetch_lot_filter_options(cur):
+    cur.execute(
+        """
+        SELECT id, name
+        FROM parking_lots
+        ORDER BY name ASC
+        """
+    )
+    return cur.fetchall()
+
+
 @app.route("/operator-dashboard")
 @login_required(role="operator")
 def operator_dashboard():
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    capacity_summary = {}
+    lot_capacity_rows = []
+    pending_requests_count = 0
+    trend_summary = {}
+    trend_rows = []
+    peak_summary = {}
+    peak_hours = []
+    filters = parse_analytics_filters(request)
+    lot_filter_options = []
+    try:
+        lot_filter_options = fetch_lot_filter_options(cur)
+        capacity_summary, lot_capacity_rows = fetch_capacity_utilization_metrics(
+            cur,
+            days=filters["range_days"],
+            lot_id=filters["lot_id"],
+        )
+        trend_summary, trend_rows = fetch_revenue_demand_trends(
+            cur,
+            days=filters["range_days"],
+            lot_id=filters["lot_id"],
+        )
+        peak_summary, peak_hours = fetch_peak_analysis(
+            cur,
+            days=filters["range_days"],
+            lot_id=filters["lot_id"],
+        )
+        cur.execute(
+            """
+            SELECT COUNT(*) AS pending_count
+            FROM reservations
+            WHERE status = %s
+              AND end_time > now()
+            """,
+            (PENDING_APPROVAL_STATUS,),
+        )
+        pending_row = cur.fetchone() or {}
+        pending_requests_count = int(pending_row.get("pending_count") or 0)
+    except psycopg2.Error as e:
+        print("Database error in operator_dashboard capacity metrics:", e)
+        flash("Could not load capacity/utilization metrics right now.", "error")
+    finally:
+        cur.close()
+        conn.close()
+
     return render_template(
         "operator_dashboard.html",
         user_email=session.get("user_email"),
-        user_role=session.get("user_role")
+        user_role=session.get("user_role"),
+        capacity_summary=capacity_summary,
+        lot_capacity_rows=lot_capacity_rows,
+        pending_requests_count=pending_requests_count,
+        trend_summary=trend_summary,
+        trend_rows=trend_rows,
+        peak_summary=peak_summary,
+        peak_hours=peak_hours,
+        analytics_filters=filters,
+        lot_filter_options=lot_filter_options,
     )
 
 
 @app.route("/admin-dashboard")
 @login_required(role="admin")
 def admin_dashboard():
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    capacity_summary = {}
+    lot_capacity_rows = []
+    trend_summary = {}
+    trend_rows = []
+    peak_summary = {}
+    peak_hours = []
+    filters = parse_analytics_filters(request)
+    lot_filter_options = []
+    try:
+        lot_filter_options = fetch_lot_filter_options(cur)
+        capacity_summary, lot_capacity_rows = fetch_capacity_utilization_metrics(
+            cur,
+            days=filters["range_days"],
+            lot_id=filters["lot_id"],
+        )
+        trend_summary, trend_rows = fetch_revenue_demand_trends(
+            cur,
+            days=filters["range_days"],
+            lot_id=filters["lot_id"],
+        )
+        peak_summary, peak_hours = fetch_peak_analysis(
+            cur,
+            days=filters["range_days"],
+            lot_id=filters["lot_id"],
+        )
+    except psycopg2.Error as e:
+        print("Database error in admin_dashboard capacity metrics:", e)
+        flash("Could not load capacity/utilization metrics right now.", "error")
+    finally:
+        cur.close()
+        conn.close()
+
     return render_template(
         "admin_dashboard.html",
         user_email=session.get("user_email"),
-        user_role=session.get("user_role")
+        user_role=session.get("user_role"),
+        capacity_summary=capacity_summary,
+        lot_capacity_rows=lot_capacity_rows,
+        trend_summary=trend_summary,
+        trend_rows=trend_rows,
+        peak_summary=peak_summary,
+        peak_hours=peak_hours,
+        analytics_filters=filters,
+        lot_filter_options=lot_filter_options,
     )
 
 @app.route("/operator/lot-slot-labels/<lot_id>", methods=["GET"])
@@ -3562,15 +4093,60 @@ def support_contact():
             "issue": request.form.get("issue", "").strip(),
         }
 
-        if not form_data["full_name"] or not form_data["email"] or not form_data["issue"]:
-            flash("Please provide your name, email, and issue details.", "error")
+        if not form_data["full_name"] or not form_data["email"] or not form_data["booking_id"] or not form_data["issue"]:
+            flash("Please provide your name, email, booking ID, and issue details.", "error")
         else:
             ticket_id = f"SUP-{uuid.uuid4().hex[:8].upper()}"
-            flash(
-                f"Support request submitted. Ticket ID: {ticket_id}. Our team will contact you soon.",
-                "success",
-            )
-            return redirect(url_for("support_contact"))
+            conn = get_db_connection()
+            cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            try:
+                ensure_support_tickets_schema()
+                reservation_id = _resolve_reservation_id_from_booking_reference(
+                    cur,
+                    form_data["booking_id"],
+                )
+                cur.execute(
+                    """
+                    INSERT INTO support_tickets (
+                        id,
+                        ticket_code,
+                        user_id,
+                        reservation_id,
+                        full_name,
+                        email,
+                        phone,
+                        booking_reference,
+                        issue,
+                        status
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (
+                        uuid.uuid4(),
+                        ticket_id,
+                        user_id if is_logged_in else None,
+                        reservation_id,
+                        form_data["full_name"],
+                        form_data["email"],
+                        form_data["phone"] or None,
+                        form_data["booking_id"] or None,
+                        form_data["issue"],
+                        SUPPORT_TICKET_STATUS_OPEN,
+                    ),
+                )
+                conn.commit()
+                flash(
+                    f"Support request submitted. Ticket ID: {ticket_id}. Our team will contact you soon.",
+                    "success",
+                )
+                return redirect(url_for("support_contact"))
+            except psycopg2.Error as exc:
+                conn.rollback()
+                print("Database error in support_contact:", exc)
+                flash("Could not submit your request right now. Please try again shortly.", "error")
+            finally:
+                cur.close()
+                conn.close()
 
     return render_template(
         "support_contact.html",
@@ -3578,6 +4154,187 @@ def support_contact():
         user_role=session.get("user_role"),
         form_data=form_data,
     )
+
+
+@app.route("/support/my-tickets")
+@login_required(role="driver")
+def my_support_tickets():
+    user_id = session.get("user_id")
+    user_email = (session.get("user_email") or "").strip().lower()
+
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    try:
+        ensure_support_tickets_schema()
+        cur.execute(
+            """
+            SELECT
+                st.id,
+                st.ticket_code,
+                st.booking_reference,
+                st.issue,
+                st.status,
+                st.created_at,
+                st.updated_at,
+                pl.name AS lot_name,
+                ps.label AS slot_label
+            FROM support_tickets st
+            LEFT JOIN reservations r ON r.id = st.reservation_id
+            LEFT JOIN parking_slots ps ON ps.id = r.slot_id
+            LEFT JOIN parking_lots pl ON pl.id = ps.lot_id
+            WHERE st.user_id = %s
+               OR LOWER(st.email) = %s
+            ORDER BY st.created_at DESC
+            """,
+            (user_id, user_email),
+        )
+        tickets = cur.fetchall()
+    finally:
+        cur.close()
+        conn.close()
+
+    return render_template(
+        "my_support_tickets.html",
+        user_email=session.get("user_email"),
+        user_role=session.get("user_role"),
+        tickets=tickets,
+    )
+
+
+def _fetch_support_tickets_for_management(cur, status_filter):
+    status_value = (status_filter or "").strip().upper()
+    if status_value and status_value not in SUPPORT_TICKET_STATUSES:
+        status_value = ""
+
+    query = """
+        SELECT
+            st.id,
+            st.ticket_code,
+            st.full_name,
+            st.email,
+            st.phone,
+            st.booking_reference,
+            st.issue,
+            st.status,
+            st.created_at,
+            st.updated_at,
+            st.reservation_id,
+            pl.name AS lot_name,
+            ps.label AS slot_label
+        FROM support_tickets st
+        LEFT JOIN reservations r ON r.id = st.reservation_id
+        LEFT JOIN parking_slots ps ON ps.id = r.slot_id
+        LEFT JOIN parking_lots pl ON pl.id = ps.lot_id
+    """
+    params = []
+    if status_value:
+        query += " WHERE st.status = %s"
+        params.append(status_value)
+    query += " ORDER BY st.created_at DESC"
+    cur.execute(query, tuple(params))
+    rows = cur.fetchall()
+
+    status_counts = {}
+    cur.execute(
+        """
+        SELECT status, COUNT(*)::int AS count
+        FROM support_tickets
+        GROUP BY status
+        """
+    )
+    for row in cur.fetchall():
+        status_counts[row["status"]] = int(row["count"] or 0)
+
+    return rows, status_value, status_counts
+
+
+def _render_support_tickets_management_page(page_title, back_url, status_filter):
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    try:
+        ensure_support_tickets_schema()
+        rows, active_status, status_counts = _fetch_support_tickets_for_management(cur, status_filter)
+        return render_template(
+            "support_tickets_management.html",
+            page_title=page_title,
+            back_url=back_url,
+            user_email=session.get("user_email"),
+            user_role=session.get("user_role"),
+            tickets=rows,
+            active_status=active_status,
+            status_counts=status_counts,
+            status_options=[
+                SUPPORT_TICKET_STATUS_OPEN,
+                SUPPORT_TICKET_STATUS_IN_PROGRESS,
+                SUPPORT_TICKET_STATUS_RESOLVED,
+                SUPPORT_TICKET_STATUS_CLOSED,
+            ],
+        )
+    finally:
+        cur.close()
+        conn.close()
+
+
+@app.route("/operator/support-tickets")
+@login_required(role="operator")
+def operator_support_tickets():
+    return _render_support_tickets_management_page(
+        page_title="Support ticket management",
+        back_url=url_for("operator_dashboard"),
+        status_filter=request.args.get("status", ""),
+    )
+
+
+@app.route("/admin/support-tickets")
+@login_required(role="admin")
+def admin_support_tickets():
+    return _render_support_tickets_management_page(
+        page_title="Support ticket management",
+        back_url=url_for("admin_dashboard"),
+        status_filter=request.args.get("status", ""),
+    )
+
+
+@app.route("/support-tickets/<ticket_id>/status", methods=["POST"])
+@login_required(role=("operator", "admin"))
+def update_support_ticket_status(ticket_id):
+    next_status = (request.form.get("status") or "").strip().upper()
+    if next_status not in SUPPORT_TICKET_STATUSES:
+        flash("Invalid ticket status.", "error")
+        target = "operator_support_tickets" if session.get("user_role") == "operator" else "admin_support_tickets"
+        return redirect(url_for(target))
+
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    try:
+        ensure_support_tickets_schema()
+        cur.execute(
+            """
+            UPDATE support_tickets
+            SET status = %s,
+                updated_at = now()
+            WHERE id = %s
+            RETURNING ticket_code
+            """,
+            (next_status, ticket_id),
+        )
+        updated = cur.fetchone()
+        if not updated:
+            conn.rollback()
+            flash("Support ticket not found.", "error")
+        else:
+            conn.commit()
+            flash(f"{updated['ticket_code']} updated to {next_status.replace('_', ' ').title()}.", "success")
+    except psycopg2.Error as exc:
+        conn.rollback()
+        print("Database error in update_support_ticket_status:", exc)
+        flash("Could not update ticket status right now.", "error")
+    finally:
+        cur.close()
+        conn.close()
+
+    target = "operator_support_tickets" if session.get("user_role") == "operator" else "admin_support_tickets"
+    return redirect(url_for(target))
 
 
 @app.route("/system-status")

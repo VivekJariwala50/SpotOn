@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>My support tickets — SpotOn</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+    <style>
+      .ticket-wrap {
+        width: 100%;
+        max-width: 980px;
+        margin: 0 auto;
+      }
+      .ticket-table-wrap {
+        overflow-x: auto;
+        margin-top: 18px;
+        border: 1px solid #e5e5e5;
+        border-radius: 16px;
+        background: #fff;
+      }
+      .ticket-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .ticket-table th,
+      .ticket-table td {
+        padding: 12px 14px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+        vertical-align: top;
+        font-size: 0.92rem;
+      }
+      .ticket-table th {
+        background: #fafafa;
+      }
+      .ticket-table tr:last-child td {
+        border-bottom: none;
+      }
+      .ticket-meta {
+        margin-top: 4px;
+        font-size: 0.82rem;
+        color: #6b7280;
+      }
+      .ticket-empty {
+        margin-top: 16px;
+        padding: 18px;
+        border-radius: 14px;
+        background: #fafafa;
+        border: 1px dashed #d1d5db;
+        color: #4b5563;
+      }
+    </style>
+  </head>
+  <body class="auth-page auth-page-with-nav">
+    {% include "_driver_static_nav.html" %}
+    <div class="auth-card auth-card--wide ticket-wrap">
+      <div class="auth-header">
+        <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
+        <h1>My support tickets</h1>
+        <p>Track progress and resolution updates for your submitted requests.</p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="flash-message {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <div class="dash-toolbar" style="margin: 0 0 16px;">
+        <a href="{{ url_for('support_contact') }}" class="btn btn-primary">Contact support</a>
+        <a href="{{ url_for('support_self_service') }}" class="btn btn-secondary">Self-service lookup</a>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Back to dashboard</a>
+      </div>
+
+      {% if tickets %}
+        <div class="ticket-table-wrap">
+          <table class="ticket-table">
+            <thead>
+              <tr>
+                <th>Ticket</th>
+                <th>Issue</th>
+                <th>Status</th>
+                <th>Last updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for t in tickets %}
+                <tr>
+                  <td>
+                    <strong>{{ t.ticket_code }}</strong>
+                    {% if t.booking_reference %}
+                      <div class="ticket-meta">Booking ref: {{ t.booking_reference }}</div>
+                    {% endif %}
+                    {% if t.lot_name %}
+                      <div class="ticket-meta">{{ t.lot_name }} · Slot {{ t.slot_label or "—" }}</div>
+                    {% endif %}
+                    <div class="ticket-meta">Created {{ t.created_at.strftime("%b %d, %Y • %I:%M %p").replace(" 0", " ") }}</div>
+                  </td>
+                  <td>{{ t.issue }}</td>
+                  <td>{{ t.status.replace("_", " ").title() }}</td>
+                  <td>{{ t.updated_at.strftime("%b %d, %Y • %I:%M %p").replace(" 0", " ") }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="ticket-empty">
+          You have not submitted any support tickets yet.
+        </div>
+      {% endif %}
+
+    </div>
+  </body>
+</html>
