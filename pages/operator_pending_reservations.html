@@ -6,6 +6,222 @@
     <title>Pending booking requests — SpotOn</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
     <style>
+      .dashboard-top-nav {
+        margin: -28px -28px 18px;
+        border-bottom: 1px solid #e7e7e7;
+        border-radius: 24px 24px 0 0;
+        overflow: visible;
+        position: relative;
+        z-index: 20;
+      }
+      .dashboard-top-nav-utility {
+        background: #111827;
+        color: #d1d5db;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        border-radius: 24px 24px 0 0;
+        position: relative;
+        z-index: 30;
+      }
+      .dashboard-top-nav-main {
+        background: #fff;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #ececec;
+      }
+      .dashboard-top-nav-brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .dashboard-top-nav-brand .text-logo {
+        font-size: 1.3rem;
+      }
+      .dashboard-top-nav-note {
+        margin: 0;
+        font-size: 0.88rem;
+        color: #6b7280;
+      }
+      .toolbar-dropdown {
+        position: relative;
+      }
+      .toolbar-dropdown summary {
+        list-style: none;
+        cursor: pointer;
+        display: inline-flex;
+      }
+      .toolbar-dropdown summary::-webkit-details-marker {
+        display: none;
+      }
+      .utility-chip {
+        width: 46px;
+        height: 46px;
+        border-radius: 999px;
+        border: 1px solid rgba(156, 163, 175, 0.45);
+        background: rgba(31, 41, 55, 0.95);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+      .utility-chip-caret {
+        position: absolute;
+        right: -2px;
+        top: -2px;
+        width: 16px;
+        height: 16px;
+        border-radius: 999px;
+        background: #0b1220;
+        color: #d1d5db;
+        font-size: 0.62rem;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .toolbar-dropdown-panel {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        min-width: 220px;
+        max-width: min(360px, calc(100vw - 32px));
+        border: 1px solid #e6e6e6;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
+        z-index: 100;
+        padding: 10px;
+        opacity: 0;
+        transform: translateY(-8px);
+        pointer-events: none;
+        transition: opacity 0.24s ease, transform 0.24s ease;
+      }
+      .toolbar-dropdown-panel::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: -14px;
+        height: 14px;
+      }
+      .toolbar-dropdown[open] .toolbar-dropdown-panel,
+      .toolbar-dropdown:hover .toolbar-dropdown-panel,
+      .toolbar-dropdown:focus-within .toolbar-dropdown-panel {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+      }
+      .user-menu-panel {
+        width: min(380px, calc(100vw - 18px));
+        min-width: 260px;
+        padding: 8px;
+        border-radius: 16px;
+      }
+      .user-menu-head {
+        padding: 4px 6px 8px;
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        align-items: flex-start;
+      }
+      .user-menu-name {
+        margin: 0;
+        font-size: 0.82rem;
+        line-height: 1.05;
+        font-weight: 900;
+        color: #0b0b0b;
+      }
+      .user-menu-id {
+        margin: 6px 0 0;
+        font-size: 0.82rem;
+        color: #6b7280;
+        font-weight: 600;
+      }
+      .user-menu-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 999px;
+        object-fit: cover;
+        border: 2px solid #fff;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+        flex-shrink: 0;
+      }
+      .user-menu-list {
+        border-top: 1px solid #ececec;
+        margin-top: 8px;
+      }
+      .user-menu-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 8px;
+        border-bottom: 1px solid #efefef;
+        text-decoration: none;
+        border-radius: 10px;
+        color: #111;
+        font-weight: 800;
+      }
+      .user-menu-row:last-child {
+        border-bottom: 0;
+      }
+      .user-menu-row:hover {
+        background: #f3f4f6;
+      }
+      .user-menu-signout {
+        margin-top: 10px;
+        width: 100%;
+        border: 1px solid #e5e7eb;
+        background: #f3f3f3;
+        color: #d7263d;
+        font-size: 0.9rem;
+        font-weight: 900;
+        border-radius: 12px;
+        min-height: 44px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .pending-back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 0;
+        background: transparent;
+        color: #6b7280;
+        font-size: 0.9rem;
+        font-weight: 700;
+        margin: 2px 0 8px;
+        padding: 0;
+        line-height: 1.2;
+        cursor: pointer;
+      }
+      .pending-back-btn:hover {
+        color: #111827;
+      }
+
+      .pending-back-btn .arrow {
+        font-size: 1rem;
+        line-height: 1;
+      }
+
+      .pending-page-header {
+        margin-bottom: 8px;
+      }
+
+      .pending-page-header .auth-header {
+        text-align: center;
+      }
+
+      .pending-page-header .auth-header h1 {
+        margin-top: 0;
+      }
+
       .pending-wrap {
         width: 100%;
         max-width: 960px;
@@ -62,12 +278,72 @@
     </style>
   </head>
   <body class="auth-page operator-page">
-    <div class="auth-card auth-card--wide pending-wrap">
-      <div class="auth-header">
-        <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
-        <h1>Pending booking requests</h1>
-        <p>{{ user_email }}</p>
-        <p>Role: {{ user_role|capitalize }}</p>
+    <div class="auth-card auth-card--wide pending-wrap compact-page dashboard-page-shell">
+      <div class="dashboard-top-nav">
+        <div class="dashboard-top-nav-utility">
+          <details class="toolbar-dropdown toolbar-dropdown--utility">
+            <summary class="utility-chip">
+              <img
+                src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80"
+                alt="Operator avatar"
+                class="user-menu-avatar"
+                style="width: 34px; height: 34px; border-width: 1px;"
+              />
+              <span class="utility-chip-caret">▾</span>
+            </summary>
+            <div class="toolbar-dropdown-panel user-menu-panel">
+              <div class="user-menu-head">
+                <div>
+                  <p class="user-menu-name">{{ user_email.split('@')[0]|replace('.', ' ')|title if user_email else 'Operator' }}</p>
+                  <p class="user-menu-id">ID: {{ user_email }}</p>
+                </div>
+                <img
+                  src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=240&q=80"
+                  alt="Operator avatar"
+                  class="user-menu-avatar"
+                />
+              </div>
+              <div class="user-menu-list">
+                <a href="{{ url_for('operator_dashboard') }}" class="user-menu-row">
+                  <span>Dashboard</span><span>›</span>
+                </a>
+                <a href="{{ url_for('operator_inventory') }}" class="user-menu-row">
+                  <span>Inventory</span><span>›</span>
+                </a>
+                <a href="{{ url_for('operator_pending_reservations') }}" class="user-menu-row">
+                  <span>Pending requests</span><span>›</span>
+                </a>
+                <a href="{{ url_for('operator_support_tickets') }}" class="user-menu-row">
+                  <span>Support tickets</span><span>›</span>
+                </a>
+              </div>
+              <a href="{{ url_for('logout') }}" class="user-menu-signout">Sign out</a>
+            </div>
+          </details>
+        </div>
+        <div class="dashboard-top-nav-main">
+          <div class="dashboard-top-nav-brand">
+            <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
+            <p class="dashboard-top-nav-note">Operator portal</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="pending-page-header">
+        <button
+          type="button"
+          class="pending-back-btn"
+          onclick="window.location.href='{{ url_for('operator_dashboard') }}';"
+          aria-label="Go back"
+        >
+          <span class="arrow" aria-hidden="true">←</span>
+          <span>Back</span>
+        </button>
+        <div class="auth-header">
+          <h1>Pending booking requests</h1>
+          <p>{{ user_email }}</p>
+          <p>Role: {{ user_role|capitalize }}</p>
+        </div>
       </div>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
@@ -79,12 +355,6 @@
           </div>
         {% endif %}
       {% endwith %}
-
-      <div class="dash-toolbar">
-        <a href="{{ url_for('operator_dashboard') }}" class="btn btn-secondary">Back to operator home</a>
-        <a href="{{ url_for('operator_inventory') }}" class="btn btn-secondary">Inventory</a>
-        <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
-      </div>
 
       <p class="dash-intro" style="margin-top: 16px">
         Confirm a request to charge the driver and lock the slot. Decline if you cannot honor the booking.
@@ -145,5 +415,34 @@
         <div class="pending-empty">No pending requests right now.</div>
       {% endif %}
     </div>
+    <script>
+      (function () {
+        const hoverMenus = document.querySelectorAll(".toolbar-dropdown--utility");
+        hoverMenus.forEach((menu) => {
+          let closeTimer = null;
+          const openMenu = () => {
+            if (closeTimer) {
+              window.clearTimeout(closeTimer);
+              closeTimer = null;
+            }
+            menu.setAttribute("open", "open");
+          };
+          const closeMenu = () => {
+            closeTimer = window.setTimeout(() => {
+              menu.removeAttribute("open");
+            }, 110);
+          };
+          menu.addEventListener("mouseenter", openMenu);
+          menu.addEventListener("mouseleave", closeMenu);
+          menu.addEventListener("focusin", openMenu);
+          menu.addEventListener("focusout", (event) => {
+            const next = event.relatedTarget;
+            if (!next || !menu.contains(next)) {
+              closeMenu();
+            }
+          });
+        });
+      })();
+    </script>
   </body>
 </html>

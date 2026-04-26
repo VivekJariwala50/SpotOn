@@ -38,6 +38,14 @@
         {% endif %}
       {% endwith %}
 
+      <div class="dash-toolbar" style="margin: 0 0 16px;">
+        <a href="{{ url_for('support_faq') }}" class="btn btn-secondary">FAQ</a>
+        {% if is_logged_in %}
+          <a href="{{ url_for('my_support_tickets') }}" class="btn btn-secondary">My tickets</a>
+        {% endif %}
+        <a href="{{ url_for('home') }}" class="btn btn-secondary">Back to home</a>
+      </div>
+
       <form method="POST" class="form-stack self-service-form">
         <label for="booking_id">Booking ID</label>
         <input
@@ -66,10 +74,6 @@
         </div>
       {% endif %}
 
-      <div class="dash-toolbar" style="margin-top: 18px;">
-        <a href="{{ url_for('support_faq') }}" class="btn btn-secondary">FAQ</a>
-        <a href="{{ url_for('home') }}" class="btn btn-secondary">Back to home</a>
-      </div>
     </div>
   </body>
 </html>

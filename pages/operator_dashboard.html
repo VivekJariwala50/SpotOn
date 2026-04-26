@@ -8,11 +8,419 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/styles.css') }}"
     />
+    <style>
+      .dashboard-top-nav {
+        margin: -28px -28px 18px;
+        border-bottom: 1px solid #e7e7e7;
+        border-radius: 24px 24px 0 0;
+        overflow: visible;
+        position: relative;
+        z-index: 20;
+      }
+
+      .dashboard-top-nav-utility {
+        background: #111827;
+        color: #d1d5db;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        border-radius: 24px 24px 0 0;
+        position: relative;
+        z-index: 30;
+      }
+
+      .toolbar-dropdown {
+        position: relative;
+      }
+
+      .toolbar-dropdown summary {
+        list-style: none;
+        cursor: pointer;
+        display: inline-flex;
+      }
+
+      .toolbar-dropdown summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .utility-chip {
+        width: 46px;
+        height: 46px;
+        border-radius: 999px;
+        border: 1px solid rgba(156, 163, 175, 0.45);
+        background: rgba(31, 41, 55, 0.95);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+
+      .utility-chip-caret {
+        position: absolute;
+        right: -2px;
+        top: -2px;
+        width: 16px;
+        height: 16px;
+        border-radius: 999px;
+        background: #0b1220;
+        color: #d1d5db;
+        font-size: 0.62rem;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .toolbar-dropdown[open] .utility-chip-caret {
+        transform: rotate(180deg);
+      }
+
+      .toolbar-dropdown-panel {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        min-width: 220px;
+        max-width: min(360px, calc(100vw - 32px));
+        border: 1px solid #e6e6e6;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
+        z-index: 100;
+        padding: 10px;
+        opacity: 0;
+        transform: translateY(-8px);
+        pointer-events: none;
+        transition: opacity 0.24s ease, transform 0.24s ease;
+      }
+
+      /* Bridge hover gap between avatar trigger and dropdown panel. */
+      .toolbar-dropdown-panel::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: -14px;
+        height: 14px;
+      }
+
+      .toolbar-dropdown[open] .toolbar-dropdown-panel,
+      .toolbar-dropdown:hover .toolbar-dropdown-panel,
+      .toolbar-dropdown:focus-within .toolbar-dropdown-panel {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+      }
+
+      .toolbar-dropdown:hover .utility-chip-caret,
+      .toolbar-dropdown:focus-within .utility-chip-caret {
+        transform: rotate(180deg);
+      }
+
+      .user-menu-panel {
+        width: min(380px, calc(100vw - 18px));
+        min-width: 260px;
+        padding: 8px;
+        border-radius: 16px;
+      }
+
+      .user-menu-head {
+        padding: 4px 6px 8px;
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        align-items: flex-start;
+      }
+
+      .user-menu-name-wrap {
+        min-width: 0;
+      }
+
+      .user-menu-name {
+        margin: 0;
+        font-size: 0.82rem;
+        line-height: 1.05;
+        font-weight: 900;
+        color: #0b0b0b;
+        letter-spacing: -0.02em;
+      }
+
+      .user-menu-id {
+        margin: 6px 0 0;
+        font-size: 0.82rem;
+        color: #6b7280;
+        font-weight: 600;
+      }
+
+      .user-menu-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 999px;
+        object-fit: cover;
+        background: #e5e7eb;
+        border: 2px solid #fff;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+        flex-shrink: 0;
+      }
+
+      .user-menu-list {
+        border-top: 1px solid #ececec;
+        margin-top: 8px;
+      }
+
+      .user-menu-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 8px;
+        border-bottom: 1px solid #efefef;
+        text-decoration: none;
+        border-radius: 10px;
+        color: #111;
+        font-weight: 800;
+        transition: background 0.18s ease;
+      }
+
+      .user-menu-row:last-child {
+        border-bottom: 0;
+      }
+
+      .user-menu-row:hover {
+        background: #f3f4f6;
+      }
+
+      .menu-pill-alert {
+        min-width: 18px;
+        height: 18px;
+        border-radius: 999px;
+        background: #d7263d;
+        color: #fff;
+        font-size: 0.7rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 5px;
+      }
+
+      .user-menu-signout {
+        margin-top: 10px;
+        width: 100%;
+        border: 1px solid #e5e7eb;
+        background: #f3f3f3;
+        color: #d7263d;
+        font-size: 0.9rem;
+        font-weight: 900;
+        border-radius: 12px;
+        min-height: 44px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.18s ease, border-color 0.18s ease;
+      }
+
+      .user-menu-signout:hover {
+        background: #e8eaef;
+        border-color: #cbd5e1;
+      }
+
+      .dashboard-top-nav-main {
+        background: #fff;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #ececec;
+      }
+
+      .dashboard-top-nav-brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .dashboard-top-nav-brand .text-logo {
+        font-size: 1.3rem;
+      }
+
+      .dashboard-top-nav-note {
+        margin: 0;
+        font-size: 0.88rem;
+        color: #6b7280;
+      }
+
+      .dashboard-user-avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 999px;
+        object-fit: cover;
+        border: 2px solid rgba(255, 255, 255, 0.25);
+      }
+
+      .operator-welcome {
+        text-align: center;
+        margin: 10px 0 14px;
+      }
+
+      .operator-welcome h1 {
+        margin: 0;
+      }
+
+      .operator-welcome p {
+        margin: 3px 0 0;
+        color: #6b7280;
+      }
+
+      .analytics-filter-bar {
+        margin-top: 14px;
+        padding: 12px;
+        border: 1px solid #e7e7e7;
+        border-radius: 12px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: end;
+      }
+
+      .analytics-field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 150px;
+      }
+
+      .analytics-field label {
+        font-size: 0.82rem;
+        color: #555;
+        font-weight: 600;
+      }
+
+      .analytics-field select {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 8px 10px;
+        background: #fff;
+      }
+
+      .widget-grid {
+        margin-top: 14px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 10px;
+      }
+
+      .widget-card {
+        border: 1px solid #e7e7e7;
+        border-radius: 12px;
+        padding: 10px 12px;
+        background: #fff;
+      }
+
+      .widget-label {
+        margin: 0;
+        font-size: 0.78rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+
+      .widget-value {
+        margin: 4px 0 0;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #111;
+      }
+
+      details.analytics-details {
+        margin-top: 12px;
+        border: 1px solid #ebebeb;
+        border-radius: 10px;
+        padding: 8px 10px 10px;
+        background: #fff;
+      }
+
+      details.analytics-details > summary {
+        cursor: pointer;
+        font-weight: 600;
+      }
+
+      .pending-alert-btn {
+        position: relative;
+      }
+
+      .pending-alert-badge {
+        position: absolute;
+        top: -9px;
+        right: -9px;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        border-radius: 999px;
+        background: #d7263d;
+        color: #fff;
+        border: 2px solid #fff;
+        font-size: 0.72rem;
+        font-weight: 700;
+        line-height: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05);
+      }
+
+    </style>
   </head>
   <body class="auth-page operator-page">
-    <div class="auth-card auth-card--wide">
-      <div class="auth-header">
-        <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
+    <div class="auth-card auth-card--wide compact-page dashboard-page-shell">
+      <div class="dashboard-top-nav">
+        <div class="dashboard-top-nav-utility">
+          <details class="toolbar-dropdown toolbar-dropdown--utility">
+            <summary class="utility-chip">
+              <img
+                src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80"
+                alt="Operator avatar"
+                class="user-menu-avatar"
+                style="width: 34px; height: 34px; border-width: 1px;"
+              />
+              <span class="utility-chip-caret">▾</span>
+            </summary>
+            <div class="toolbar-dropdown-panel user-menu-panel">
+              <div class="user-menu-head">
+                <div class="user-menu-name-wrap">
+                  <p class="user-menu-name">{{ user_email.split('@')[0]|replace('.', ' ')|title if user_email else 'Operator' }}</p>
+                  <p class="user-menu-id">ID: {{ user_email }}</p>
+                </div>
+                <img
+                  src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=240&q=80"
+                  alt="Operator avatar"
+                  class="user-menu-avatar"
+                />
+              </div>
+              <div class="user-menu-list">
+                <a href="{{ url_for('operator_pending_reservations') }}" class="user-menu-row">
+                  <span>Pending booking requests</span>
+                  {% if pending_requests_count > 0 %}
+                    <span class="menu-pill-alert">{{ pending_requests_count }}</span>
+                  {% endif %}
+                </a>
+                <a href="{{ url_for('operator_inventory') }}" class="user-menu-row">Open inventory</a>
+                <a href="{{ url_for('operator_inventory') }}#lot-pricing-section" class="user-menu-row">Pricing &amp; overrides</a>
+                <a href="{{ url_for('operator_support_tickets') }}" class="user-menu-row">Support tickets</a>
+              </div>
+              <a href="{{ url_for('logout') }}" class="user-menu-signout">Sign out</a>
+            </div>
+          </details>
+        </div>
+        <div class="dashboard-top-nav-main">
+          <div class="dashboard-top-nav-brand">
+            <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
+            <p class="dashboard-top-nav-note">Operator portal</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="operator-welcome">
         <h1>Welcome</h1>
         <p>{{ user_email }}</p>
         <p>Role: {{ user_role|capitalize }}</p>
@@ -35,12 +443,215 @@
         </p>
       </div>
 
-      <div class="dash-toolbar">
-        <a href="{{ url_for('operator_pending_reservations') }}" class="btn btn-primary">Pending booking requests</a>
-        <a href="{{ url_for('operator_inventory') }}" class="btn btn-secondary">Open inventory</a>
-        <a href="{{ url_for('operator_inventory') }}#lot-pricing-section" class="btn btn-secondary">Pricing &amp; overrides</a>
-        <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+      <form method="GET" action="{{ url_for('operator_dashboard') }}" class="analytics-filter-bar">
+        <div class="analytics-field">
+          <label for="analytics_range">Time range</label>
+          <select id="analytics_range" name="range">
+            <option value="today" {% if analytics_filters.get("range_key") == "today" %}selected{% endif %}>Today</option>
+            <option value="7d" {% if analytics_filters.get("range_key") == "7d" %}selected{% endif %}>Last 7 days</option>
+            <option value="30d" {% if analytics_filters.get("range_key") == "30d" %}selected{% endif %}>Last 30 days</option>
+          </select>
+        </div>
+        <div class="analytics-field">
+          <label for="analytics_lot">Lot scope</label>
+          <select id="analytics_lot" name="lot_id">
+            <option value="">All lots</option>
+            {% for lot in lot_filter_options %}
+              <option value="{{ lot.id }}" {% if analytics_filters.get("lot_id") == lot.id|string %}selected{% endif %}>
+                {{ lot.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn btn-secondary">Apply filters</button>
+      </form>
+
+      <div class="dash-intro" style="margin-top: 14px;">
+        <h3 class="dash-intro__title">Capacity and utilization</h3>
+        <p style="margin: 8px 0 0;">
+          Showing {{ analytics_filters.get("range_key", "7d")|upper }} metrics
+          {% if analytics_filters.get("lot_id") %}for selected lot{% else %}across all lots{% endif %}.
+        </p>
       </div>
+      <div class="widget-grid">
+        <div class="widget-card"><p class="widget-label">Lots</p><p class="widget-value">{{ capacity_summary.get("lot_count", 0) }}</p></div>
+        <div class="widget-card"><p class="widget-label">Total slots</p><p class="widget-value">{{ capacity_summary.get("total_slots", 0) }}</p></div>
+        <div class="widget-card"><p class="widget-label">Active bookable</p><p class="widget-value">{{ capacity_summary.get("active_bookable_slots", 0) }}</p></div>
+        <div class="widget-card"><p class="widget-label">Occupied now</p><p class="widget-value">{{ capacity_summary.get("occupied_now", 0) }}</p></div>
+        <div class="widget-card"><p class="widget-label">Utilization now</p><p class="widget-value">{{ capacity_summary.get("utilization_pct", 0) }}%</p></div>
+        <div class="widget-card"><p class="widget-label">Occupied (range)</p><p class="widget-value">{{ capacity_summary.get("occupied_in_window", 0) }}</p></div>
+        <div class="widget-card"><p class="widget-label">Utilization (range)</p><p class="widget-value">{{ capacity_summary.get("utilization_window_pct", 0) }}%</p></div>
+      </div>
+
+      {% if lot_capacity_rows %}
+        <details class="analytics-details">
+          <summary>View capacity details</summary>
+          <div style="margin-top: 8px; overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr>
+                  <th style="text-align: left; padding: 8px;">Lot</th>
+                  <th style="text-align: right; padding: 8px;">Total</th>
+                  <th style="text-align: right; padding: 8px;">Bookable</th>
+                  <th style="text-align: right; padding: 8px;">Occupied now</th>
+                  <th style="text-align: right; padding: 8px;">Occupied (range)</th>
+                  <th style="text-align: right; padding: 8px;">Available now</th>
+                  <th style="text-align: right; padding: 8px;">Util now</th>
+                  <th style="text-align: right; padding: 8px;">Util (range)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for lot in lot_capacity_rows %}
+                  <tr>
+                    <td style="padding: 8px;">{{ lot.lot_name }}</td>
+                    <td style="text-align: right; padding: 8px;">{{ lot.total_slots }}</td>
+                    <td style="text-align: right; padding: 8px;">{{ lot.active_bookable_slots }}</td>
+                    <td style="text-align: right; padding: 8px;">{{ lot.occupied_now }}</td>
+                    <td style="text-align: right; padding: 8px;">{{ lot.occupied_in_window }}</td>
+                    <td style="text-align: right; padding: 8px;">{{ lot.available_now }}</td>
+                    <td style="text-align: right; padding: 8px;">{{ lot.utilization_pct }}%</td>
+                    <td style="text-align: right; padding: 8px;">{{ lot.utilization_window_pct }}%</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </details>
+      {% endif %}
+
+      <div class="dash-intro" style="margin-top: 18px;">
+        <h3 class="dash-intro__title">Revenue and demand trend (last {{ trend_summary.get("window_days", 7) }} days)</h3>
+      </div>
+      <div class="widget-grid">
+        <div class="widget-card"><p class="widget-label">Bookings</p><p class="widget-value">{{ trend_summary.get("total_bookings", 0) }}</p></div>
+        <div class="widget-card"><p class="widget-label">Charges</p><p class="widget-value">{{ trend_summary.get("total_successful_charges", 0) }}</p></div>
+        <div class="widget-card"><p class="widget-label">Gross</p><p class="widget-value">${{ "%.2f"|format(trend_summary.get("gross_revenue", 0)) }}</p></div>
+        <div class="widget-card"><p class="widget-label">Refunds</p><p class="widget-value">${{ "%.2f"|format(trend_summary.get("refunds", 0)) }}</p></div>
+        <div class="widget-card"><p class="widget-label">Net</p><p class="widget-value">${{ "%.2f"|format(trend_summary.get("net_revenue", 0)) }}</p></div>
+      </div>
+
+      {% if trend_rows %}
+        <details class="analytics-details">
+          <summary>View daily trend details</summary>
+          <div style="margin-top: 8px; overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr>
+                  <th style="text-align: left; padding: 8px;">Day</th>
+                  <th style="text-align: right; padding: 8px;">Bookings</th>
+                  <th style="text-align: right; padding: 8px;">Charges</th>
+                  <th style="text-align: right; padding: 8px;">Gross</th>
+                  <th style="text-align: right; padding: 8px;">Refunds</th>
+                  <th style="text-align: right; padding: 8px;">Net</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in trend_rows %}
+                  <tr>
+                    <td style="padding: 8px;">{{ row.day_label }}</td>
+                    <td style="text-align: right; padding: 8px;">{{ row.bookings }}</td>
+                    <td style="text-align: right; padding: 8px;">{{ row.successful_charges }}</td>
+                    <td style="text-align: right; padding: 8px;">${{ "%.2f"|format(row.gross_revenue) }}</td>
+                    <td style="text-align: right; padding: 8px;">${{ "%.2f"|format(row.refunds) }}</td>
+                    <td style="text-align: right; padding: 8px;">${{ "%.2f"|format(row.net_revenue) }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </details>
+      {% endif %}
+
+      <div class="dash-intro" style="margin-top: 18px;">
+        <h3 class="dash-intro__title">Peak analysis (last {{ peak_summary.get("window_days", 7) }} days)</h3>
+      </div>
+      <div class="widget-grid">
+        <div class="widget-card"><p class="widget-label">Peak booking hour</p><p class="widget-value">{{ peak_summary.get("peak_booking_hour_label", "—") }}</p></div>
+        <div class="widget-card"><p class="widget-label">Bookings in peak hour</p><p class="widget-value">{{ peak_summary.get("peak_booking_hour_count", 0) }}</p></div>
+        <div class="widget-card"><p class="widget-label">Peak revenue hour</p><p class="widget-value">{{ peak_summary.get("peak_revenue_hour_label", "—") }}</p></div>
+        <div class="widget-card"><p class="widget-label">Revenue at peak hour</p><p class="widget-value">${{ "%.2f"|format(peak_summary.get("peak_revenue_hour_amount", 0)) }}</p></div>
+        <div class="widget-card"><p class="widget-label">Peak revenue day</p><p class="widget-value">{{ peak_summary.get("peak_revenue_day_label", "—") }}</p></div>
+        <div class="widget-card"><p class="widget-label">Revenue at peak day</p><p class="widget-value">${{ "%.2f"|format(peak_summary.get("peak_revenue_day_amount", 0)) }}</p></div>
+      </div>
+
+      {% if peak_hours %}
+        <details class="analytics-details">
+          <summary>View top booking hours</summary>
+          <div style="margin-top: 8px; overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr>
+                  <th style="text-align: left; padding: 8px;">Top booking hour</th>
+                  <th style="text-align: right; padding: 8px;">Bookings</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in peak_hours %}
+                  <tr>
+                    <td style="padding: 8px;">{{ row.hour_label }}</td>
+                    <td style="text-align: right; padding: 8px;">{{ row.bookings }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </details>
+      {% endif %}
+
     </div>
   </body>
+  <script>
+    (function () {
+      const hoverMenus = document.querySelectorAll(".toolbar-dropdown--utility");
+      let hoverArmed = false;
+
+      const armHover = () => {
+        hoverArmed = true;
+      };
+      window.addEventListener("mousemove", armHover, { once: true });
+      window.addEventListener("pointerdown", armHover, { once: true });
+
+      const forceCloseAllMenus = () => {
+        hoverMenus.forEach((menu) => menu.removeAttribute("open"));
+      };
+      forceCloseAllMenus();
+
+      // Back/forward cache can restore <details open>. Reset it reliably.
+      window.addEventListener("pageshow", () => {
+        hoverArmed = false;
+        forceCloseAllMenus();
+        window.setTimeout(forceCloseAllMenus, 0);
+        window.requestAnimationFrame(() => {
+          forceCloseAllMenus();
+        });
+      });
+
+      hoverMenus.forEach((menu) => {
+        // Prevent restored/open state when navigating back to dashboard.
+        menu.removeAttribute("open");
+        let closeTimer = null;
+
+        const openMenu = () => {
+          // First deliberate hover should open immediately after back-nav restore.
+          if (!hoverArmed) {
+            hoverArmed = true;
+          }
+          if (closeTimer) {
+            window.clearTimeout(closeTimer);
+            closeTimer = null;
+          }
+          menu.setAttribute("open", "open");
+        };
+
+        const closeMenu = () => {
+          closeTimer = window.setTimeout(() => {
+            menu.removeAttribute("open");
+          }, 110);
+        };
+
+        menu.addEventListener("mouseenter", openMenu);
+        menu.addEventListener("mouseleave", closeMenu);
+      });
+    })();
+  </script>
 </html>

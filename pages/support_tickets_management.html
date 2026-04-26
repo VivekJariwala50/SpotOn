@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>{{ page_title }} — SpotOn</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+    <style>
+      .ticket-wrap {
+        width: 100%;
+        max-width: 1040px;
+        margin: 0 auto;
+      }
+      .ticket-back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 0;
+        background: transparent;
+        color: #6b7280;
+        font-size: 0.9rem;
+        font-weight: 700;
+        margin: 2px 0 8px;
+        padding: 0;
+        line-height: 1.2;
+        cursor: pointer;
+      }
+      .ticket-back-btn:hover {
+        color: #111827;
+      }
+      .ticket-summary-strip {
+        margin-top: 12px;
+      }
+      .ticket-table-wrap {
+        overflow-x: auto;
+        margin-top: 16px;
+        border: 1px solid #e5e5e5;
+        border-radius: 16px;
+        background: #fff;
+      }
+      .ticket-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .ticket-table th,
+      .ticket-table td {
+        padding: 12px 14px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+        vertical-align: top;
+        font-size: 0.92rem;
+      }
+      .ticket-table th {
+        background: #fafafa;
+      }
+      .ticket-table tr:last-child td {
+        border-bottom: none;
+      }
+      .ticket-meta {
+        color: #6b7280;
+        font-size: 0.82rem;
+        margin-top: 4px;
+      }
+      .ticket-filter-row {
+        margin-top: 14px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: end;
+      }
+      .ticket-filter-row label {
+        margin: 0;
+        font-size: 0.8rem;
+        color: #666;
+      }
+      .ticket-empty {
+        margin-top: 16px;
+        padding: 18px;
+        border-radius: 14px;
+        background: #fafafa;
+        border: 1px dashed #d1d5db;
+        color: #4b5563;
+      }
+    </style>
+  </head>
+  <body class="auth-page operator-page">
+    <div class="auth-card auth-card--wide ticket-wrap">
+      <button type="button" class="ticket-back-btn" onclick="window.location.href='{{ back_url }}';" aria-label="Go back">
+        <span aria-hidden="true">←</span>
+        <span>Back</span>
+      </button>
+      <div class="auth-header">
+        <a href="{{ url_for('home') }}" class="text-logo">Spot<span>On</span></a>
+        <h1>{{ page_title }}</h1>
+        <p>{{ user_email }}</p>
+        <p>Role: {{ user_role|capitalize }}</p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="flash-message {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <section class="inv-summary-strip ticket-summary-strip" aria-label="Support ticket summary">
+        {% for status in status_options %}
+          <div class="inv-summary-card">
+            <p class="inv-summary-label">{{ status.replace('_', ' ').title() }}</p>
+            <p class="inv-summary-value">{{ status_counts.get(status, 0) }}</p>
+          </div>
+        {% endfor %}
+      </section>
+
+      <form method="GET" class="ticket-filter-row">
+        <div>
+          <label for="ticket-status-filter">Status filter</label>
+          <select id="ticket-status-filter" name="status">
+            <option value="">All statuses</option>
+            {% for status in status_options %}
+              <option value="{{ status }}" {% if active_status == status %}selected{% endif %}>
+                {{ status.replace('_', ' ').title() }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn btn-secondary">Apply</button>
+      </form>
+
+      {% if tickets %}
+        <div class="ticket-table-wrap">
+          <table class="ticket-table">
+            <thead>
+              <tr>
+                <th>Ticket</th>
+                <th>Requester</th>
+                <th>Issue</th>
+                <th>Status</th>
+                <th>Update</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for t in tickets %}
+                <tr>
+                  <td>
+                    <strong>{{ t.ticket_code }}</strong>
+                    <div class="ticket-meta">Created {{ t.created_at.strftime("%b %d, %Y • %I:%M %p").replace(" 0", " ") }}</div>
+                    {% if t.booking_reference %}
+                      <div class="ticket-meta">Booking ref: {{ t.booking_reference }}</div>
+                    {% endif %}
+                    {% if t.lot_name %}
+                      <div class="ticket-meta">{{ t.lot_name }} · Slot {{ t.slot_label or "—" }}</div>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <strong>{{ t.full_name }}</strong>
+                    <div class="ticket-meta">{{ t.email }}</div>
+                    {% if t.phone %}
+                      <div class="ticket-meta">{{ t.phone }}</div>
+                    {% endif %}
+                  </td>
+                  <td>{{ t.issue }}</td>
+                  <td>{{ t.status.replace('_', ' ').title() }}</td>
+                  <td>
+                    <form method="POST" action="{{ url_for('update_support_ticket_status', ticket_id=t.id) }}">
+                      <select name="status" aria-label="Update status for {{ t.ticket_code }}">
+                        {% for status in status_options %}
+                          <option value="{{ status }}" {% if t.status == status %}selected{% endif %}>
+                            {{ status.replace('_', ' ').title() }}
+                          </option>
+                        {% endfor %}
+                      </select>
+                      <button type="submit" class="btn btn-secondary" style="margin-top: 8px;">Save</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="ticket-empty">No support tickets match this filter.</div>
+      {% endif %}
+    </div>
+  </body>
+</html>

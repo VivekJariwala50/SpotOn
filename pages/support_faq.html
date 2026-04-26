@@ -55,6 +55,20 @@
         <p>Quick answers for booking, billing, and account questions.</p>
       </div>
 
+      <div class="dash-toolbar" style="margin: 0 0 16px;">
+        <a href="{{ url_for('support_self_service') }}" class="btn btn-primary">Self-service lookup</a>
+        <a href="{{ url_for('support_contact') }}" class="btn btn-secondary">Contact support</a>
+        {% if is_logged_in %}
+          <a href="{{ url_for('my_support_tickets') }}" class="btn btn-secondary">My tickets</a>
+        {% endif %}
+        <a href="{{ url_for('system_status_page') }}" class="btn btn-secondary">System status</a>
+        {% if is_logged_in %}
+          <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Back to dashboard</a>
+        {% else %}
+          <a href="{{ url_for('home') }}" class="btn btn-secondary">Back to home</a>
+        {% endif %}
+      </div>
+
       <div class="dash-section">
         <div class="dash-section__head">
           <h2 class="dash-section__title">Frequently asked questions</h2>
@@ -99,16 +113,6 @@
         </div>
       </div>
 
-      <div class="dash-toolbar">
-        <a href="{{ url_for('support_self_service') }}" class="btn btn-primary">Self-service lookup</a>
-        <a href="{{ url_for('support_contact') }}" class="btn btn-secondary">Contact support</a>
-        <a href="{{ url_for('system_status_page') }}" class="btn btn-secondary">System status</a>
-        {% if is_logged_in %}
-          <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Back to dashboard</a>
-        {% else %}
-          <a href="{{ url_for('home') }}" class="btn btn-secondary">Back to home</a>
-        {% endif %}
-      </div>
       <p class="support-faq-updated">Last updated: Apr 2026</p>
     </div>
     <script>

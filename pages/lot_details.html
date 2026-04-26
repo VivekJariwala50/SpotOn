@@ -203,6 +203,29 @@
         min-width: 0;
       }
 
+      .bulk-booking-toggle {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        border: 0;
+        background: transparent;
+        padding: 0;
+        margin: 0 0 8px;
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .bulk-booking-caret {
+        font-size: 1.1rem;
+        line-height: 1;
+      }
+
+      .bulk-booking-content.is-collapsed {
+        display: none;
+      }
+
       /* Match `.slot-reserve-form` vertical date/time stack */
       .bulk-datetime-fields {
         display: flex;
@@ -329,9 +352,19 @@
       {% if show_bulk_panel %}
       <div
         class="bulk-booking-panel"
-        style="margin: 28px 0 20px; padding: 20px 20px 22px; border: 1px solid #d9e8dc; border-radius: 18px; background: #f6fbf7;"
+        style="margin: 28px 0 20px; padding: 20px 20px 22px; border: 1px solid #e6e6e6; border-radius: 18px; background: #fff;"
       >
-        <h2 style="margin: 0 0 8px; font-size: 1.25rem;">Group booking (bulk)</h2>
+        <button
+          type="button"
+          class="bulk-booking-toggle"
+          id="bulk-booking-toggle"
+          aria-controls="bulk-booking-content"
+          aria-expanded="false"
+        >
+          <h2 style="margin: 0; font-size: 1.25rem;">Group booking (bulk)</h2>
+          <span class="bulk-booking-caret" id="bulk-booking-caret" aria-hidden="true">▾</span>
+        </button>
+        <div id="bulk-booking-content" class="bulk-booking-content is-collapsed">
         <p style="margin: 0 0 16px; color: #444; line-height: 1.45; font-size: 0.95rem;">
           Reserve <strong>one or more</strong> spaces for the <strong>same time window</strong> in one request.
           Pick a vehicle <strong>per slot</strong> (so you can use different cars where slot rules differ).
@@ -452,6 +485,7 @@
             <button type="submit" class="btn btn-primary js-bulk-submit-final" style="margin-top: 14px;">Submit group booking</button>
           </div>
         </form>
+        </div>
       </div>
       {% endif %}
 
@@ -992,6 +1026,27 @@
 });
 
       const bulkForm = document.getElementById("bulk-reserve-form");
+      const bulkBookingToggle = document.getElementById("bulk-booking-toggle");
+      const bulkBookingContent = document.getElementById("bulk-booking-content");
+      const bulkBookingCaret = document.getElementById("bulk-booking-caret");
+
+      function setBulkSectionExpanded(expanded) {
+        if (!bulkBookingToggle || !bulkBookingContent) return;
+        bulkBookingToggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+        bulkBookingContent.classList.toggle("is-collapsed", !expanded);
+        if (bulkBookingCaret) {
+          bulkBookingCaret.textContent = expanded ? "▴" : "▾";
+        }
+      }
+
+      if (bulkBookingToggle && bulkBookingContent) {
+        setBulkSectionExpanded(false);
+        bulkBookingToggle.addEventListener("click", () => {
+          const expanded = bulkBookingToggle.getAttribute("aria-expanded") === "true";
+          setBulkSectionExpanded(!expanded);
+        });
+      }
+
       if (bulkForm) {
         const BULK_RETRY_MAP = {{ bulk_retry_map|default({})|tojson }};
         const BULK_REOPEN_PAYMENT = {{ bulk_reopen_payment|default(false)|tojson }};
@@ -1212,6 +1267,7 @@
         syncBulkReservationForm();
         refreshBulkGate();
         if (BULK_REOPEN_PAYMENT && isBulkBookingBasicsComplete()) {
+          setBulkSectionExpanded(true);
           setBulkPaymentShellExpanded(true);
           if (BULK_RETRY_CARDHOLDER) {
             const ch = bulkForm.querySelector("#bulk_cardholder_name");

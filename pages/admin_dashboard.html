@@ -8,6 +8,80 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/styles.css') }}"
     />
+    <style>
+      .analytics-filter-bar {
+        margin-top: 14px;
+        padding: 12px;
+        border: 1px solid #e7e7e7;
+        border-radius: 12px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: end;
+      }
+
+      .analytics-field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 150px;
+      }
+
+      .analytics-field label {
+        font-size: 0.82rem;
+        color: #555;
+        font-weight: 600;
+      }
+
+      .analytics-field select {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 8px 10px;
+        background: #fff;
+      }
+
+      .widget-grid {
+        margin-top: 14px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 10px;
+      }
+
+      .widget-card {
+        border: 1px solid #e7e7e7;
+        border-radius: 12px;
+        padding: 10px 12px;
+        background: #fff;
+      }
+
+      .widget-label {
+        margin: 0;
+        font-size: 0.78rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+
+      .widget-value {
+        margin: 4px 0 0;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #111;
+      }
+
+      details.analytics-details {
+        margin-top: 12px;
+        border: 1px solid #ebebeb;
+        border-radius: 10px;
+        padding: 8px 10px 10px;
+        background: #fff;
+      }
+
+      details.analytics-details > summary {
+        cursor: pointer;
+        font-weight: 600;
+      }
+    </style>
   </head>
   <body class="auth-page">
     <div class="auth-card auth-card--wide">
@@ -33,9 +107,165 @@
         <p>Manage platform users, reporting, and administrative controls.</p>
       </div>
 
+      <form method="GET" action="{{ url_for('admin_dashboard') }}" class="analytics-filter-bar">
+        <div class="analytics-field">
+          <label for="analytics_range">Time range</label>
+          <select id="analytics_range" name="range">
+            <option value="today" {% if analytics_filters.get("range_key") == "today" %}selected{% endif %}>Today</option>
+            <option value="7d" {% if analytics_filters.get("range_key") == "7d" %}selected{% endif %}>Last 7 days</option>
+            <option value="30d" {% if analytics_filters.get("range_key") == "30d" %}selected{% endif %}>Last 30 days</option>
+          </select>
+        </div>
+        <div class="analytics-field">
+          <label for="analytics_lot">Lot scope</label>
+          <select id="analytics_lot" name="lot_id">
+            <option value="">All lots</option>
+            {% for lot in lot_filter_options %}
+              <option value="{{ lot.id }}" {% if analytics_filters.get("lot_id") == lot.id|string %}selected{% endif %}>
+                {{ lot.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn btn-secondary">Apply filters</button>
+      </form>
+
+      <div style="margin-top: 14px;">
+        <h3>Capacity and utilization</h3>
+        <p style="margin: 8px 0 0;">
+          Showing {{ analytics_filters.get("range_key", "7d")|upper }} metrics
+          {% if analytics_filters.get("lot_id") %}for selected lot{% else %}across all lots{% endif %}.
+        </p>
+      </div>
+      <div class="widget-grid">
+        <div class="widget-card"><p class="widget-label">Lots</p><p class="widget-value">{{ capacity_summary.get("lot_count", 0) }}</p></div>
+        <div class="widget-card"><p class="widget-label">Total slots</p><p class="widget-value">{{ capacity_summary.get("total_slots", 0) }}</p></div>
+        <div class="widget-card"><p class="widget-label">Active bookable</p><p class="widget-value">{{ capacity_summary.get("active_bookable_slots", 0) }}</p></div>
+        <div class="widget-card"><p class="widget-label">Occupied now</p><p class="widget-value">{{ capacity_summary.get("occupied_now", 0) }}</p></div>
+        <div class="widget-card"><p class="widget-label">Utilization now</p><p class="widget-value">{{ capacity_summary.get("utilization_pct", 0) }}%</p></div>
+        <div class="widget-card"><p class="widget-label">Occupied (range)</p><p class="widget-value">{{ capacity_summary.get("occupied_in_window", 0) }}</p></div>
+        <div class="widget-card"><p class="widget-label">Utilization (range)</p><p class="widget-value">{{ capacity_summary.get("utilization_window_pct", 0) }}%</p></div>
+      </div>
+
+      {% if lot_capacity_rows %}
+        <details class="analytics-details">
+          <summary>View capacity details</summary>
+          <div style="margin-top: 8px; overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr>
+                  <th style="text-align: left; padding: 8px;">Lot</th>
+                  <th style="text-align: right; padding: 8px;">Total</th>
+                  <th style="text-align: right; padding: 8px;">Bookable</th>
+                  <th style="text-align: right; padding: 8px;">Occupied now</th>
+                  <th style="text-align: right; padding: 8px;">Occupied (range)</th>
+                  <th style="text-align: right; padding: 8px;">Available now</th>
+                  <th style="text-align: right; padding: 8px;">Util now</th>
+                  <th style="text-align: right; padding: 8px;">Util (range)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for lot in lot_capacity_rows %}
+                  <tr>
+                    <td style="padding: 8px;">{{ lot.lot_name }}</td>
+                    <td style="text-align: right; padding: 8px;">{{ lot.total_slots }}</td>
+                    <td style="text-align: right; padding: 8px;">{{ lot.active_bookable_slots }}</td>
+                    <td style="text-align: right; padding: 8px;">{{ lot.occupied_now }}</td>
+                    <td style="text-align: right; padding: 8px;">{{ lot.occupied_in_window }}</td>
+                    <td style="text-align: right; padding: 8px;">{{ lot.available_now }}</td>
+                    <td style="text-align: right; padding: 8px;">{{ lot.utilization_pct }}%</td>
+                    <td style="text-align: right; padding: 8px;">{{ lot.utilization_window_pct }}%</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </details>
+      {% endif %}
+
+      <div style="margin-top: 18px;">
+        <h3>Revenue and demand trend (last {{ trend_summary.get("window_days", 7) }} days)</h3>
+      </div>
+      <div class="widget-grid">
+        <div class="widget-card"><p class="widget-label">Bookings</p><p class="widget-value">{{ trend_summary.get("total_bookings", 0) }}</p></div>
+        <div class="widget-card"><p class="widget-label">Charges</p><p class="widget-value">{{ trend_summary.get("total_successful_charges", 0) }}</p></div>
+        <div class="widget-card"><p class="widget-label">Gross</p><p class="widget-value">${{ "%.2f"|format(trend_summary.get("gross_revenue", 0)) }}</p></div>
+        <div class="widget-card"><p class="widget-label">Refunds</p><p class="widget-value">${{ "%.2f"|format(trend_summary.get("refunds", 0)) }}</p></div>
+        <div class="widget-card"><p class="widget-label">Net</p><p class="widget-value">${{ "%.2f"|format(trend_summary.get("net_revenue", 0)) }}</p></div>
+      </div>
+
+      {% if trend_rows %}
+        <details class="analytics-details">
+          <summary>View daily trend details</summary>
+          <div style="margin-top: 8px; overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr>
+                  <th style="text-align: left; padding: 8px;">Day</th>
+                  <th style="text-align: right; padding: 8px;">Bookings</th>
+                  <th style="text-align: right; padding: 8px;">Charges</th>
+                  <th style="text-align: right; padding: 8px;">Gross</th>
+                  <th style="text-align: right; padding: 8px;">Refunds</th>
+                  <th style="text-align: right; padding: 8px;">Net</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in trend_rows %}
+                  <tr>
+                    <td style="padding: 8px;">{{ row.day_label }}</td>
+                    <td style="text-align: right; padding: 8px;">{{ row.bookings }}</td>
+                    <td style="text-align: right; padding: 8px;">{{ row.successful_charges }}</td>
+                    <td style="text-align: right; padding: 8px;">${{ "%.2f"|format(row.gross_revenue) }}</td>
+                    <td style="text-align: right; padding: 8px;">${{ "%.2f"|format(row.refunds) }}</td>
+                    <td style="text-align: right; padding: 8px;">${{ "%.2f"|format(row.net_revenue) }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </details>
+      {% endif %}
+
+      <div style="margin-top: 18px;">
+        <h3>Peak analysis (last {{ peak_summary.get("window_days", 7) }} days)</h3>
+      </div>
+      <div class="widget-grid">
+        <div class="widget-card"><p class="widget-label">Peak booking hour</p><p class="widget-value">{{ peak_summary.get("peak_booking_hour_label", "—") }}</p></div>
+        <div class="widget-card"><p class="widget-label">Bookings in peak hour</p><p class="widget-value">{{ peak_summary.get("peak_booking_hour_count", 0) }}</p></div>
+        <div class="widget-card"><p class="widget-label">Peak revenue hour</p><p class="widget-value">{{ peak_summary.get("peak_revenue_hour_label", "—") }}</p></div>
+        <div class="widget-card"><p class="widget-label">Revenue at peak hour</p><p class="widget-value">${{ "%.2f"|format(peak_summary.get("peak_revenue_hour_amount", 0)) }}</p></div>
+        <div class="widget-card"><p class="widget-label">Peak revenue day</p><p class="widget-value">{{ peak_summary.get("peak_revenue_day_label", "—") }}</p></div>
+        <div class="widget-card"><p class="widget-label">Revenue at peak day</p><p class="widget-value">${{ "%.2f"|format(peak_summary.get("peak_revenue_day_amount", 0)) }}</p></div>
+      </div>
+
+      {% if peak_hours %}
+        <details class="analytics-details">
+          <summary>View top booking hours</summary>
+          <div style="margin-top: 8px; overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr>
+                  <th style="text-align: left; padding: 8px;">Top booking hour</th>
+                  <th style="text-align: right; padding: 8px;">Bookings</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in peak_hours %}
+                  <tr>
+                    <td style="padding: 8px;">{{ row.hour_label }}</td>
+                    <td style="text-align: right; padding: 8px;">{{ row.bookings }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </details>
+      {% endif %}
+
       <div style="margin-top: 20px; display: flex; gap: 14px; flex-wrap: wrap;">
         <a href="{{ url_for('home') }}" class="btn btn-secondary">Back to site</a>
         <a href="{{ url_for('search') }}" class="btn btn-secondary">Parking search</a>
+        <a href="{{ url_for('admin_support_tickets') }}" class="btn btn-secondary">Support tickets</a>
         <a href="{{ url_for('logout') }}" class="btn btn-primary">Logout</a>
       </div>
     </div>
